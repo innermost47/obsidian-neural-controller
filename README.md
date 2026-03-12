@@ -7,7 +7,10 @@
 [![MIDI](https://img.shields.io/badge/MIDI-USB%20%7C%20CoreMIDI-orange)](https://github.com/innermost47/ai-dj)
 [![License](https://img.shields.io/badge/License-AGPL%20v3-blue)](https://github.com/innermost47/ai-dj/blob/main/LICENSE)
 
----
+<div align="center">
+  <img src="assets/screen.jpg" alt="OBSIDIAN Neural mobile MIDI surface controller landscape UI for tablet and mobile, showing generative AI and mixing features" width="800"/>
+  <p><i>Seamless live workflow: Instantly generate unique AI loops and craft your mix with high-precision touch controls.</i></p>
+</div>
 
 ## What is this?
 
