@@ -40,33 +40,82 @@ class SlotCard extends StatelessWidget {
     return GestureDetector(
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        width: 190,
+        width: 280,
         margin: const EdgeInsets.symmetric(vertical: 8),
         padding: const EdgeInsets.all(10),
         decoration: ObsidianTheme.cardDecoration(),
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
+        child: IntrinsicHeight(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _Header(slot: slot, midiNote: _midiNote()),
-              const SizedBox(height: 8),
-              _PageRow(slot: slot, ctrl: ctrl),
-              const SizedBox(height: 8),
-              _SeqRow(slot: slot, ctrl: ctrl),
-              const SizedBox(height: 10),
-              _PlayGenRow(slot: slot, ctrl: ctrl),
-              const SizedBox(height: 6),
-              _BottomRow(slot: slot, ctrl: ctrl),
-              const SizedBox(height: 8),
-              _VolumeAndPan(slot: slot, ctrl: ctrl),
-              const SizedBox(height: 10),
-              _PitchRow(slot: slot, ctrl: ctrl),
-              const SizedBox(height: 10),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _Header(slot: slot, midiNote: _midiNote()),
+                    const SizedBox(height: 12),
+                    _PageRow(slot: slot, ctrl: ctrl),
+                    const SizedBox(height: 8),
+                    _SeqRow(slot: slot, ctrl: ctrl),
+                    const SizedBox(height: 10),
+                    _PlayGenRow(slot: slot, ctrl: ctrl),
+                    const SizedBox(height: 6),
+                    _BottomRow(slot: slot, ctrl: ctrl),
+                    const SizedBox(height: 10),
+                    _KnobsRow(slot: slot, ctrl: ctrl),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 32,
+                child: ObsidianFader(
+                  value: slot.volume,
+                  onChanged: (v) => ctrl.setVolume(slot.index, v),
+                  label: 'VOL',
+                ),
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _KnobsRow extends StatelessWidget {
+  final SlotState slot;
+  final AppController ctrl;
+  const _KnobsRow({required this.slot, required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        ObsidianKnob(
+          value: (slot.pan + 1) / 2,
+          onChanged: (v) => ctrl.setPan(slot.index, v * 2 - 1),
+          size: 34,
+          label: 'PAN',
+          accentColor: ObsidianTheme.primary,
+        ),
+        ObsidianKnob(
+          value: (slot.pitch + 12) / 24,
+          onChanged: (v) => ctrl.setPitch(slot.index, v * 24 - 12),
+          size: 34,
+          label: 'PITCH',
+          accentColor: ObsidianTheme.primaryLight,
+        ),
+        ObsidianKnob(
+          value: (slot.fine + 50) / 100,
+          onChanged: (v) => ctrl.setFine(slot.index, v * 100 - 50),
+          size: 34,
+          label: 'FINE',
+          accentColor: ObsidianTheme.primaryLight,
+        ),
+      ],
     );
   }
 }
@@ -187,64 +236,6 @@ class _SeqRow extends StatelessWidget {
                       child: _seqPad(i + 4),
                     ),
                   )),
-        ),
-      ],
-    );
-  }
-}
-
-class _VolumeAndPan extends StatelessWidget {
-  final SlotState slot;
-  final AppController ctrl;
-  const _VolumeAndPan({required this.slot, required this.ctrl});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        ObsidianFader(
-          value: slot.volume,
-          onChanged: (v) => ctrl.setVolume(slot.index, v),
-          height: 90,
-          label: 'VOL',
-        ),
-        ObsidianKnob(
-          value: (slot.pan + 1) / 2,
-          onChanged: (v) => ctrl.setPan(slot.index, v * 2 - 1),
-          size: 40,
-          label: 'PAN',
-          accentColor: ObsidianTheme.primary,
-        ),
-      ],
-    );
-  }
-}
-
-class _PitchRow extends StatelessWidget {
-  final SlotState slot;
-  final AppController ctrl;
-  const _PitchRow({required this.slot, required this.ctrl});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        ObsidianKnob(
-          value: (slot.pitch + 12) / 24,
-          onChanged: (v) => ctrl.setPitch(slot.index, v * 24 - 12),
-          size: 38,
-          label: 'PITCH',
-          accentColor: ObsidianTheme.primaryLight,
-        ),
-        ObsidianKnob(
-          value: (slot.fine + 50) / 100,
-          onChanged: (v) => ctrl.setFine(slot.index, v * 100 - 50),
-          size: 38,
-          label: 'FINE',
-          accentColor: ObsidianTheme.primaryLight,
         ),
       ],
     );

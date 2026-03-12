@@ -1,13 +1,10 @@
 import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
-import '../theme.dart'; // Assurez-vous que le chemin est correct
+import '../theme.dart';
 
-/// Représente l'état visuel d'un bouton d'action (Play, Stop, Generate)
 enum ActionState { idle, pending, active }
 
-/// Bouton d'action intelligent avec gestion d'état et animations.
-/// Utilisé pour Play/Stop/Generate.
 class ObsidianActionButton extends StatefulWidget {
   final IconData idleIcon;
   final IconData activeIcon;
@@ -41,7 +38,7 @@ class _ObsidianActionButtonState extends State<ObsidianActionButton>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-      duration: const Duration(milliseconds: 600), // Doux clignotement
+      duration: const Duration(milliseconds: 600),
       vsync: this,
     );
     _pulse = Tween(begin: 0.4, end: 1.0).animate(_ctrl);
@@ -72,7 +69,6 @@ class _ObsidianActionButtonState extends State<ObsidianActionButton>
 
     return GestureDetector(
       onTapDown: (_) {
-        // Vibration seulement à l'interaction utilisateur
         HapticFeedback.lightImpact();
         widget.onTap();
       },
@@ -81,7 +77,6 @@ class _ObsidianActionButtonState extends State<ObsidianActionButton>
         builder: (context, child) {
           Color bgColor;
           if (isPending) {
-            // Interpolation de couleur pour le clignotement
             bgColor = Color.lerp(ObsidianTheme.cardBg, color, _pulse.value)!;
           } else if (isActive) {
             bgColor = color;
@@ -114,7 +109,6 @@ class _ObsidianActionButtonState extends State<ObsidianActionButton>
   }
 }
 
-/// Knob rotatif avec retour haptique léger.
 class ObsidianKnob extends StatefulWidget {
   final double value;
   final ValueChanged<double> onChanged;
@@ -138,7 +132,7 @@ class ObsidianKnob extends StatefulWidget {
 class _ObsidianKnobState extends State<ObsidianKnob> {
   double _dragStart = 0;
   double _valueStart = 0;
-  int _lastHapticValue = -1; // Pour éviter les vibrations continues
+  int _lastHapticValue = -1;
 
   @override
   Widget build(BuildContext context) {
@@ -156,7 +150,6 @@ class _ObsidianKnobState extends State<ObsidianKnob> {
             final delta = (_dragStart - d.localPosition.dy) / 150;
             final newValue = (_valueStart + delta).clamp(0.0, 1.0);
 
-            // Haptique léger par palier (optionnel)
             final currentVal = (newValue * 10).round();
             if (currentVal != _lastHapticValue) {
               HapticFeedback.lightImpact();
@@ -196,7 +189,6 @@ class _KnobPainter extends CustomPainter {
     final strokeW = 3.0;
     final rect = Rect.fromCircle(center: Offset(cx, cy), radius: radius);
 
-    // Fond de la piste
     canvas.drawArc(
       rect,
       _degToRad(135),
@@ -209,7 +201,6 @@ class _KnobPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round,
     );
 
-    // Valeur active
     if (value > 0) {
       canvas.drawArc(
         rect,
@@ -224,14 +215,12 @@ class _KnobPainter extends CustomPainter {
       );
     }
 
-    // Cercle intérieur
     canvas.drawCircle(
       Offset(cx, cy),
       radius - strokeW - 2,
       Paint()..color = ObsidianTheme.cardBg,
     );
 
-    // Aiguille
     final angle = _degToRad(135 + 270 * value);
     final innerR = radius - strokeW - 8.0;
     final outerR = radius - strokeW - 2.0;
@@ -251,7 +240,6 @@ class _KnobPainter extends CustomPainter {
   bool shouldRepaint(_KnobPainter old) => old.value != value;
 }
 
-/// Fader vertical avec retour visuel gradient.
 class ObsidianFader extends StatefulWidget {
   final double value;
   final ValueChanged<double> onChanged;
@@ -279,73 +267,79 @@ class _ObsidianFaderState extends State<ObsidianFader> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: MainAxisSize.max,
       children: [
         if (widget.label.isNotEmpty) ...[
           Text(widget.label, style: ObsidianTheme.labelTiny),
           const SizedBox(height: 3),
         ],
-        GestureDetector(
-          onVerticalDragStart: (d) {
-            _dragStart = d.localPosition.dy;
-            _valueStart = widget.value;
-            HapticFeedback.selectionClick();
-          },
-          onVerticalDragUpdate: (d) {
-            final delta = (_dragStart - d.localPosition.dy) / widget.height;
-            widget.onChanged((_valueStart + delta).clamp(0.0, 1.0));
-          },
-          child: SizedBox(
-            width: 28,
-            height: widget.height,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Piste de fond
-                Container(
-                  width: 3,
-                  height: widget.height,
-                  decoration: BoxDecoration(
-                    color: ObsidianTheme.border,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                // Jauge de volume
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Container(
-                    width: 3,
-                    height: widget.height * widget.value,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [widget.accentColor, ObsidianTheme.vuYellow],
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final h = constraints.maxHeight;
+
+              return GestureDetector(
+                onVerticalDragStart: (d) {
+                  _dragStart = d.localPosition.dy;
+                  _valueStart = widget.value;
+                  HapticFeedback.selectionClick();
+                },
+                onVerticalDragUpdate: (d) {
+                  final delta = (_dragStart - d.localPosition.dy) / h;
+                  widget.onChanged((_valueStart + delta).clamp(0.0, 1.0));
+                },
+                child: SizedBox(
+                  width: 28,
+                  height: h,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: 3,
+                        height: h,
+                        decoration: BoxDecoration(
+                          color: ObsidianTheme.border,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Container(
+                          width: 3,
+                          height: h * widget.value,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                widget.accentColor,
+                                ObsidianTheme.vuYellow
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: (h * widget.value).clamp(0.0, h) - 5,
+                        child: Container(
+                          width: 20,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: ObsidianTheme.surfaceLight,
+                            borderRadius: BorderRadius.circular(3),
+                            border: Border.all(color: ObsidianTheme.border),
+                            boxShadow: const [
+                              BoxShadow(color: Colors.black12, blurRadius: 2),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                // Curseur (Cap)
-                Positioned(
-                  bottom:
-                      (widget.height * widget.value).clamp(0.0, widget.height) -
-                          5,
-                  child: Container(
-                    width: 20,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: ObsidianTheme.surfaceLight,
-                      borderRadius: BorderRadius.circular(3),
-                      border: Border.all(color: ObsidianTheme.border),
-                      boxShadow: const [
-                        BoxShadow(color: Colors.black12, blurRadius: 2),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ],
@@ -353,7 +347,6 @@ class _ObsidianFaderState extends State<ObsidianFader> {
   }
 }
 
-/// Bouton rectangulaire arrondi (style "Pill") simple.
 class ObsidianPill extends StatelessWidget {
   final String label;
   final bool active;
@@ -539,7 +532,6 @@ class _GenerateButtonState extends State<GenerateButton>
   }
 }
 
-/// Indicateur d'état de connexion MIDI.
 class ConnectionBadge extends StatefulWidget {
   final bool isConnected;
   final String deviceName;
