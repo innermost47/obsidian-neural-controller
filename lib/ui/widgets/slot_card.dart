@@ -38,13 +38,12 @@ class SlotCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => ctrl.selectSlot(slot.index - 1),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         width: 190,
         margin: const EdgeInsets.symmetric(vertical: 8),
         padding: const EdgeInsets.all(10),
-        decoration: ObsidianTheme.cardDecoration(active: isSelected),
+        decoration: ObsidianTheme.cardDecoration(),
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Column(
@@ -262,20 +261,26 @@ class _PlayGenRow extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: ObsidianIconBtn(
-            icon: Icons.play_arrow,
-            active: slot.isPlaying,
-            onTap: () => ctrl.playSlot(slot.index),
-            activeColor: ObsidianTheme.primary,
-            size: 34,
-            tooltip: 'Play',
+          child: SizedBox(
+            height: 44,
+            child: ObsidianIconBtn(
+              icon: Icons.play_arrow,
+              active: slot.isPlaying,
+              onTap: () => ctrl.playSlot(slot.index),
+              activeColor: ObsidianTheme.primary,
+              size: 28,
+              tooltip: 'Play',
+            ),
           ),
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: 8),
         Expanded(
-          child: GenerateButton(
-            isGenerating: slot.isGenerating,
-            onTap: () => ctrl.generateSlot(slot.index),
+          child: SizedBox(
+            height: 44,
+            child: GenerateButton(
+              isGenerating: slot.isGenerating,
+              onTap: () => ctrl.generateSlot(slot.index),
+            ),
           ),
         ),
       ],

@@ -405,7 +405,6 @@ class ObsidianPill extends StatelessWidget {
   }
 }
 
-/// Bouton icone simple (sans état complexe, juste actif/inactif).
 class ObsidianIconBtn extends StatelessWidget {
   final IconData icon;
   final bool active;
@@ -426,27 +425,23 @@ class ObsidianIconBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = activeColor ?? ObsidianTheme.primary;
     final btn = GestureDetector(
-      onTapDown: (_) {
-        HapticFeedback.lightImpact();
-        onTap();
-      },
+      onTapDown: (_) => HapticFeedback.lightImpact(),
+      onTapUp: (_) => onTap(),
+      onTapCancel: () {},
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 120),
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: active ? color : ObsidianTheme.cardBg,
+          color: ObsidianTheme.cardBg,
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: active ? color : ObsidianTheme.border),
+          border: Border.all(color: ObsidianTheme.border),
         ),
         child: Icon(
           icon,
           size: size * 0.45,
-          color: active
-              ? ObsidianTheme.textOnPrimary
-              : ObsidianTheme.textSecondary,
+          color: ObsidianTheme.textSecondary,
         ),
       ),
     );
@@ -454,8 +449,6 @@ class ObsidianIconBtn extends StatelessWidget {
   }
 }
 
-/// Bouton Generate spécial avec animation pulsante intégrée.
-/// Gère automatiquement l'animation si isGenerating est true.
 class GenerateButton extends StatefulWidget {
   final bool isGenerating;
   final VoidCallback onTap;

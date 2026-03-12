@@ -74,12 +74,12 @@ class ObsidianTheme {
     color: textMuted,
   );
 
-  static BoxDecoration cardDecoration({bool active = false}) => BoxDecoration(
-        color: active ? cardBgActive : cardBg,
+  static BoxDecoration cardDecoration() => BoxDecoration(
+        color: cardBg,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: active ? borderActive : border,
-          width: active ? 2 : 1,
+          color: border,
+          width: 1,
         ),
       );
 
