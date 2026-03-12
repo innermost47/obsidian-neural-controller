@@ -1,0 +1,49 @@
+name: obsidian_controller
+description: OBSIDIAN Neural — MIDI control surface
+
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_midi_command: ^0.5.1
+  provider: ^6.1.1
+  flutter_native_splash: ^2.3.1
+  window_manager: ^0.3.7
+  vibration: ^3.1.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  windows:
+    generate: true
+    image_path: "assets/icon/app_icon.png"
+    icon_size: 48
+  macos:
+    generate: true
+    image_path: "assets/icon/app_icon.png"
+
+flutter_native_splash:
+  color: "#121212"
+  image: assets/icon/splash_logo.png
+  android_12:
+    image: assets/icon/splash_logo.png
+    color: "#121212"
+  fullscreen: true
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icon/
+    - assets/logo.png
