@@ -49,7 +49,12 @@ class AppController extends ChangeNotifier {
           _updateSlot(i, (s) => s.copyWith(pendingPage: true));
         } else {
           _updateSlot(
-              i, (s) => s.copyWith(pendingPage: false, pendingPageTarget: -1));
+              i,
+              (s) => s.copyWith(
+                    currentPage: value,
+                    pendingPage: false,
+                    pendingPageTarget: -1,
+                  ));
         }
         return;
       }
