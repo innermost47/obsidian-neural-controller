@@ -16,19 +16,36 @@ void main() {
   runApp(const ObsidianControllerApp());
 }
 
-class ObsidianControllerApp extends StatelessWidget {
+class ObsidianControllerApp extends StatefulWidget {
   const ObsidianControllerApp({super.key});
+  @override
+  State<ObsidianControllerApp> createState() => _ObsidianControllerAppState();
+}
+
+class _ObsidianControllerAppState extends State<ObsidianControllerApp> {
+  late final MidiService midiService;
+  late final AppController appController;
+
+  @override
+  void initState() {
+    super.initState();
+    midiService = MidiService();
+    appController = AppController(midi: midiService);
+  }
+
+  @override
+  void dispose() {
+    appController.dispose();
+    midiService.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final midiService = MidiService();
-
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<MidiService>.value(value: midiService),
-        ChangeNotifierProvider<AppController>(
-          create: (_) => AppController(midi: midiService),
-        ),
+        ChangeNotifierProvider<AppController>.value(value: appController),
       ],
       child: MaterialApp(
         title: 'OBSIDIAN Neural',

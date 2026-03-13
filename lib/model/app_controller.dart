@@ -15,8 +15,13 @@ class AppController extends ChangeNotifier {
   SlotState get currentSlot => _slots[_selectedSlot];
 
   AppController({required this.midi}) {
-    midi.startScanning();
     midi.onFeedbackMessage = _handleFeedback;
+    midi.onDeviceConnected = () {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        midi.requestState();
+      });
+    };
+    midi.startScanning();
   }
 
   void _handleFeedback(int cc, int value) {
@@ -59,6 +64,10 @@ class AppController extends ChangeNotifier {
         return;
       }
     }
+  }
+
+  void syncState() {
+    midi.requestState();
   }
 
   void selectSlot(int index) {

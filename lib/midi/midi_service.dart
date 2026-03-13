@@ -16,6 +16,7 @@ class MidiService extends ChangeNotifier {
 
   Function(String type, int channel, int data1, int data2)? onMidiMessage;
   Function(int cc, int value)? onFeedbackMessage;
+  Function()? onDeviceConnected;
 
   ConnectionState get state => _state;
   String get deviceName => _deviceName;
@@ -27,6 +28,10 @@ class MidiService extends ChangeNotifier {
     _deviceSub = _midi.onMidiSetupChanged?.listen((_) => _refreshDevices());
     _rxSub = _midi.onMidiDataReceived?.listen(_handleIncomingMidi);
     _refreshDevices();
+  }
+
+  void requestState() {
+    _sendCC(MidiMapping.ccRequestState, 127);
   }
 
   void _handleIncomingMidi(MidiPacket packet) {
@@ -89,6 +94,7 @@ class MidiService extends ChangeNotifier {
       _deviceName = device.name;
       _state = ConnectionState.connected;
       notifyListeners();
+      onDeviceConnected?.call();
     } catch (e) {
       _state = ConnectionState.error;
       notifyListeners();

@@ -66,6 +66,34 @@ class _TopBar extends StatelessWidget {
                 color: ObsidianTheme.textMuted,
               )),
           const Spacer(),
+          GestureDetector(
+            onTap: () {
+              print('🔄 Sync tapped');
+              context.read<AppController>().syncState();
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: ObsidianTheme.primary.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(6),
+                border:
+                    Border.all(color: ObsidianTheme.primary.withOpacity(0.4)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.sync, size: 14, color: ObsidianTheme.primary),
+                  const SizedBox(width: 4),
+                  Text('SYNC',
+                      style: ObsidianTheme.labelSmall.copyWith(
+                        color: ObsidianTheme.primary,
+                        fontWeight: FontWeight.w700,
+                      )),
+                ],
+              ),
+            ),
+          ),
           ListenableBuilder(
             listenable: midi,
             builder: (_, __) => ConnectionBadge(

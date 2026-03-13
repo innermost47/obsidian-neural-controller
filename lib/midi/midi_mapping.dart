@@ -16,7 +16,7 @@ class MidiMapping {
   static int ccFine(int slot) => 109 + slot;
   static int ccBeatRepeat(int slot) => 119 + slot;
   static int ccSeq(int slot) => 15 + slot;
-
+  static const int ccRequestState = 118;
   static const int feedbackChannel = 1;
   static const int feedbackIdle = 0;
   static const int feedbackPending = 64;
