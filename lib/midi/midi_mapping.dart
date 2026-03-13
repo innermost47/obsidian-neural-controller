@@ -21,7 +21,14 @@ class MidiMapping {
   static const int feedbackIdle = 0;
   static const int feedbackPending = 64;
   static const int feedbackActive = 127;
-
+  static int ccFeedbackVolume(int slot) => 50 + slot;
+  static int ccFeedbackPan(int slot) => 60 + slot;
+  static int ccFeedbackPitch(int slot) => 70 + slot;
+  static int ccFeedbackFine(int slot) => 80 + slot;
+  static int ccFeedbackSeq(int slot) => 90 + slot;
+  static int ccFeedbackMute(int slot) => 100 + slot;
+  static int ccFeedbackSolo(int slot) => 109 + slot;
+  static int ccFeedbackBeatRepeat(int slot) => 118 + slot;
   static int ccFeedbackPlay(int slot) => 20 + slot;
   static int ccFeedbackGenerate(int slot) => 30 + slot;
   static int ccFeedbackPage(int slot) => 40 + slot;
@@ -35,7 +42,7 @@ class MidiMapping {
   }
 
   static int pitchToMidi(double pitch) =>
-      ((pitch + 12.0) / 24.0 * 127).round().clamp(0, 127);
+      ((pitch + 96.0) / 192.0 * 127).round().clamp(0, 127);
   static int fineToMidi(double fine) =>
       ((fine + 50.0) / 100.0 * 127).round().clamp(0, 127);
   static int volumeToMidi(double v) => (v * 127).round().clamp(0, 127);

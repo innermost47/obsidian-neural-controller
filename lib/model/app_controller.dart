@@ -63,6 +63,43 @@ class AppController extends ChangeNotifier {
         }
         return;
       }
+      if (cc == MidiMapping.ccFeedbackVolume(i)) {
+        _updateSlot(i, (s) => s.copyWith(volume: value / 127.0));
+        return;
+      }
+      if (cc == MidiMapping.ccFeedbackPan(i)) {
+        _updateSlot(i, (s) => s.copyWith(pan: (value / 127.0) * 2.0 - 1.0));
+        return;
+      }
+      if (cc == MidiMapping.ccFeedbackPitch(i)) {
+        _updateSlot(
+            i, (s) => s.copyWith(pitch: (value / 127.0) * 192.0 - 96.0));
+        return;
+      }
+      if (cc == MidiMapping.ccFeedbackFine(i)) {
+        _updateSlot(
+            i, (s) => s.copyWith(fine: (value / 127.0) * 200.0 - 100.0));
+        return;
+      }
+      if (cc == MidiMapping.ccFeedbackMute(i)) {
+        _updateSlot(
+            i, (s) => s.copyWith(isMuted: value == MidiMapping.feedbackActive));
+        return;
+      }
+      if (cc == MidiMapping.ccFeedbackSolo(i)) {
+        _updateSlot(
+            i, (s) => s.copyWith(isSolo: value == MidiMapping.feedbackActive));
+        return;
+      }
+      if (cc == MidiMapping.ccFeedbackBeatRepeat(i)) {
+        _updateSlot(i,
+            (s) => s.copyWith(beatRepeat: value == MidiMapping.feedbackActive));
+        return;
+      }
+      if (cc == MidiMapping.ccFeedbackSeq(i)) {
+        _updateSlot(i, (s) => s.copyWith(currentSeq: value));
+        return;
+      }
     }
   }
 
