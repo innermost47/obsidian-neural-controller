@@ -1,19 +1,21 @@
-// lib/model/models.dart
-
 class SlotState {
-  final int index; // 1-based
+  final int index;
   final String name;
-  final double volume; // 0..1
-  final double pan; // -1..1
-  final double pitch; // -12..+12 semitones
-  final double fine; // -50..+50 cents
+  final double volume;
+  final double pan;
+  final double pitch;
+  final double fine;
   final bool isMuted;
   final bool isSolo;
   final bool isPlaying;
   final bool isGenerating;
   final bool beatRepeat;
-  final int currentPage; // 0=A, 1=B, 2=C, 3=D
-  final int currentSeq; // 0-7 (Seq1..Seq8)
+  final int currentPage;
+  final int currentSeq;
+  final bool pendingPlay;
+  final bool pendingPage;
+  final int pendingPageTarget;
+  final bool pendingStop;
 
   const SlotState({
     required this.index,
@@ -29,6 +31,10 @@ class SlotState {
     this.beatRepeat = false,
     this.currentPage = 0,
     this.currentSeq = 0,
+    this.pendingPlay = false,
+    this.pendingPage = false,
+    this.pendingPageTarget = -1,
+    this.pendingStop = false,
   });
 
   String get displayName => name.isEmpty ? 'Slot $index' : name;
@@ -46,29 +52,28 @@ class SlotState {
     bool? beatRepeat,
     int? currentPage,
     int? currentSeq,
-  }) => SlotState(
-    index: index,
-    name: name ?? this.name,
-    volume: volume ?? this.volume,
-    pan: pan ?? this.pan,
-    pitch: pitch ?? this.pitch,
-    fine: fine ?? this.fine,
-    isMuted: isMuted ?? this.isMuted,
-    isSolo: isSolo ?? this.isSolo,
-    isPlaying: isPlaying ?? this.isPlaying,
-    isGenerating: isGenerating ?? this.isGenerating,
-    beatRepeat: beatRepeat ?? this.beatRepeat,
-    currentPage: currentPage ?? this.currentPage,
-    currentSeq: currentSeq ?? this.currentSeq,
-  );
-}
-
-class MasterState {
-  final double volume;
-  final double pan;
-
-  const MasterState({this.volume = 0.8, this.pan = 0.0});
-
-  MasterState copyWith({double? volume, double? pan}) =>
-      MasterState(volume: volume ?? this.volume, pan: pan ?? this.pan);
+    bool? pendingPlay,
+    bool? pendingPage,
+    int? pendingPageTarget,
+    bool? pendingStop,
+  }) =>
+      SlotState(
+        index: index,
+        name: name ?? this.name,
+        volume: volume ?? this.volume,
+        pan: pan ?? this.pan,
+        pitch: pitch ?? this.pitch,
+        fine: fine ?? this.fine,
+        isMuted: isMuted ?? this.isMuted,
+        isSolo: isSolo ?? this.isSolo,
+        isPlaying: isPlaying ?? this.isPlaying,
+        isGenerating: isGenerating ?? this.isGenerating,
+        beatRepeat: beatRepeat ?? this.beatRepeat,
+        currentPage: currentPage ?? this.currentPage,
+        currentSeq: currentSeq ?? this.currentSeq,
+        pendingPlay: pendingPlay ?? this.pendingPlay,
+        pendingPage: pendingPage ?? this.pendingPage,
+        pendingPageTarget: pendingPageTarget ?? this.pendingPageTarget,
+        pendingStop: pendingStop ?? this.pendingStop,
+      );
 }

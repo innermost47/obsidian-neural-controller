@@ -23,10 +23,12 @@ This app turns your Android or iOS device into a **dedicated hardware-style cont
 ## Features
 
 - **8 slot cards** — one per OBSIDIAN track, scrollable horizontally
-- **Per slot:** Volume fader · Pan knob · Pitch · Fine tune · Play · Stop · Generate · Mute · Solo · Beat Repeat
-- **Pages A/B/C/D** — switch track variations instantly
+- **Per slot:** Volume fader · Pan knob · Pitch · Fine tune · Play · Generate · Mute · Solo · Beat Repeat
+- **Pages A/B/C/D** — switch track variations instantly (disabled during generation)
 - **8 Sequencer patterns** per slot (2-row grid, finger-friendly)
 - **Master panel** — Master volume, pan, prev/next track navigation
+- **Bidirectional MIDI feedback** — app reflects real VST state in real time (play, generate, page changes)
+- **Smart UI states** — buttons pulse while pending (armed/stopping/generating), lock during generation
 - **Auto-connect** — plug your USB MIDI cable, the app connects automatically
 - **Plug & play** — zero configuration, hardcoded MIDI mapping on Ch.1
 - **Landscape only** — optimized for tablet and phone in landscape mode
@@ -55,7 +57,7 @@ The app detects and connects to the first available USB MIDI device automaticall
 ### 2. Build & install
 
 ```bash
-git clone https://github.com/innermost47/ai-dj.git   # or your fork
+git clone https://github.com/innermost47/ai-dj.git
 cd obsidian-controller
 
 flutter pub get
@@ -82,49 +84,50 @@ Or run: `start ms-settings:developers`
 
 ---
 
-## MIDI Mapping (Ch.1, hardcoded)
+## MIDI Mapping
 
-| Control               | MIDI Message                                 |
-| --------------------- | -------------------------------------------- |
-| Play Slot 1–8         | Note On C4–G4 (notes 60–67)                  |
-| Volume Slot 1–8       | CC 20–27                                     |
-| Pan Slot 1–8          | CC 30–37                                     |
-| Mute Slot 1–8         | CC 40–47 `(127=on, 0=off)`                   |
-| Solo Slot 1–8         | CC 50–57 `(127=on, 0=off)`                   |
-| Generate Slot 1–8     | CC 60–67 `(pulse 127→0)`                     |
-| Stop Slot 1–8         | CC 70–77 `(pulse 127→0)`                     |
-| Next / Prev Track     | CC 80–81                                     |
-| Page A/B/C/D Slot 1–8 | CC 90–97 `(0=A, 32=B, 64=C, 96=D)`           |
-| Pitch Slot 1–8        | CC 100–107 `(0=−12st, 64=center, 127=+12st)` |
-| Fine Tune Slot 1–8    | CC 110–117 `(0=−50¢, 64=center, 127=+50¢)`   |
-| Beat Repeat Slot 1–8  | CC 120–127 `(127=on, 0=off)`                 |
-| Seq Pattern Slot 1–8  | CC 16–23 `(0–127 → seq 1–8)`                 |
-| Master Volume         | CC 7                                         |
-| Master Pan            | CC 10                                        |
+### App → VST (Ch.1, hardcoded)
+
+| Control               | MIDI Message                                    |
+| --------------------- | ----------------------------------------------- |
+| Play Slot 1–8         | Note On notes 36–43 (C2–G2)                     |
+| Stop Slot 1–8         | CC 70–77 `(pulse 127→0)`                        |
+| Volume Slot 1–8       | CC 20–27                                        |
+| Pan Slot 1–8          | CC 30–37                                        |
+| Mute Slot 1–8         | CC 40–47 `(127=on, 0=off)`                      |
+| Solo Slot 1–8         | CC 50–57 `(127=on, 0=off)`                      |
+| Generate Slot 1–8     | CC 60–67 `(pulse 127→0)`                        |
+| Next / Prev Track     | CC 80–81                                        |
+| Page A/B/C/D Slot 1–8 | CC 90–97 `(10=A, 45=B, 75=C, 110=D)`            |
+| Pitch Slot 1–8        | CC 100–107 `(0=−12st, 64=center, 127=+12st)`    |
+| Fine Tune Slot 1–8    | CC 110–117 `(0=−50¢, 64=center, 127=+50¢)`      |
+| Beat Repeat Slot 1–8  | CC 120–127 `(127=on, 0=off)`                    |
+| Seq Pattern Slot 1–8  | CC 16–23 `(0/18/36/54/72/90/108/126 → seq 1–8)` |
+| Master Volume         | CC 7                                            |
+| Master Pan            | CC 10                                           |
 
 These CCs must be mapped in OBSIDIAN Neural's MIDI Learn system. Right-click any parameter in the plugin → **MIDI Learn** → move the corresponding control in this app.
 
+### VST → App feedback (Ch.2, automatic)
+
+The VST sends real-time state updates back to the app on MIDI channel 2. No configuration needed — the app listens automatically.
+
+| CC       | State                   | Values                           |
+| -------- | ----------------------- | -------------------------------- |
+| CC 21–28 | Play state Slot 1–8     | `0=idle, 64=pending, 127=active` |
+| CC 31–38 | Generate state Slot 1–8 | `0=idle, 64=pending, 127=active` |
+| CC 41–48 | Page change Slot 1–8    | `0=idle, 64=pending, 127=active` |
+
+**UI states driven by feedback:**
+
+| State        | Visual                                                                               |
+| ------------ | ------------------------------------------------------------------------------------ |
+| `idle`       | Button white, play icon                                                              |
+| `pending`    | Button pulsing, icon matches intent (play icon when arming, stop icon when stopping) |
+| `active`     | Button solid, stop icon                                                              |
+| `generating` | GEN button pulsing, page pills grayed out and locked                                 |
+
 ---
-
-## Architecture
-
-```
-lib/
-├── main.dart                    # Entry point — landscape lock, providers
-├── midi/
-│   ├── midi_mapping.dart        # All CC/Note constants (Ch.1, hardcoded)
-│   └── midi_service.dart        # flutter_midi_command wrapper, auto-connect
-├── model/
-│   ├── models.dart              # SlotState, MasterState (immutable)
-│   └── app_controller.dart      # ChangeNotifier — UI ↔ MIDI bridge
-└── ui/
-    ├── theme.dart               # OBSIDIAN color palette & typography
-    ├── main_screen.dart         # TopBar + horizontal scroll + MasterPanel
-    └── widgets/
-        ├── controls.dart        # ObsidianKnob, ObsidianFader, ObsidianPill…
-        ├── slot_card.dart       # Full slot card (volume, pan, pitch, pages, seq…)
-        └── master_panel.dart    # Master vol/pan + nav + MIDI legend
-```
 
 **Dependencies:**
 
@@ -133,23 +136,17 @@ lib/
 
 ---
 
-## Roadmap
+## Bitwig Studio setup (recommended)
 
-### V2 — Bidirectional MIDI feedback (plugin → app)
+The VST sends MIDI feedback on Ch.2 via its `processBlock` output buffer. To route this to your Android device in Bitwig:
 
-The plugin will send CC state updates from `timerCallback()` at 30Hz. The app will listen via `_midi.onMidiDataReceived` and reflect the plugin state in real time:
+1. Keep your OBSIDIAN-Neural instrument track output on **Master** (audio intact)
+2. Create a new **MIDI track**
+3. Add a **Note Receiver** device — set source to your OBSIDIAN-Neural track
+4. Set the MIDI track **output** to your USB Android port
+5. Set monitoring to **On** (always active, not just armed)
 
-| CC       | State                          |
-| -------- | ------------------------------ |
-| CC 0–7   | isPlaying slot 1–8             |
-| CC 8–15  | isGenerating slot 1–8          |
-| CC 16–23 | Current volume slot 1–8        |
-| CC 24–31 | isMuted slot 1–8               |
-| CC 32–39 | isSolo slot 1–8                |
-| CC 40–47 | Current page slot 1–8          |
-| CC 48–55 | Active sequencer step slot 1–8 |
-| CC 56    | Host BPM (value/2)             |
-| CC 57    | Host isPlaying                 |
+The app will receive feedback automatically once connected.
 
 ---
 

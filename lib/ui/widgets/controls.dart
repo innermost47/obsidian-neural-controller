@@ -8,6 +8,7 @@ enum ActionState { idle, pending, active }
 class ObsidianActionButton extends StatefulWidget {
   final IconData idleIcon;
   final IconData activeIcon;
+  final IconData? pendingIcon;
   final ActionState state;
   final VoidCallback onTap;
   final Color? activeColor;
@@ -18,6 +19,7 @@ class ObsidianActionButton extends StatefulWidget {
     super.key,
     required this.idleIcon,
     required this.activeIcon,
+    this.pendingIcon,
     required this.state,
     required this.onTap,
     this.activeColor,
@@ -67,6 +69,12 @@ class _ObsidianActionButtonState extends State<ObsidianActionButton>
     final isActive = widget.state == ActionState.active;
     final isPending = widget.state == ActionState.pending;
 
+    final icon = isPending
+        ? (widget.pendingIcon ?? widget.idleIcon)
+        : isActive
+            ? widget.activeIcon
+            : widget.idleIcon;
+
     return GestureDetector(
       onTapDown: (_) {
         HapticFeedback.lightImpact();
@@ -96,7 +104,7 @@ class _ObsidianActionButtonState extends State<ObsidianActionButton>
               ),
             ),
             child: Icon(
-              isActive ? widget.activeIcon : widget.idleIcon,
+              icon,
               size: widget.size * 0.5,
               color: (isActive || isPending)
                   ? ObsidianTheme.textOnPrimary
@@ -444,12 +452,14 @@ class ObsidianIconBtn extends StatelessWidget {
 
 class GenerateButton extends StatefulWidget {
   final bool isGenerating;
+  final bool isDisabled;
   final VoidCallback onTap;
 
   const GenerateButton({
     super.key,
     required this.isGenerating,
     required this.onTap,
+    this.isDisabled = false,
   });
 
   @override
@@ -465,11 +475,12 @@ class _GenerateButtonState extends State<GenerateButton>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _glow = Tween(begin: 0.5, end: 1.0).animate(_ctrl);
-
+    _glow = Tween(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+    );
     if (widget.isGenerating) {
       _ctrl.repeat(reverse: true);
     }
@@ -494,39 +505,51 @@ class _GenerateButtonState extends State<GenerateButton>
 
   @override
   Widget build(BuildContext context) {
+    const colorA = Color(0xFF7B5EA7);
+    const colorB = Color(0xFF9B7FC7);
+
     return GestureDetector(
       onTapDown: (_) {
+        if (widget.isDisabled || widget.isGenerating) return;
         HapticFeedback.mediumImpact();
         widget.onTap();
       },
       child: AnimatedBuilder(
         animation: _glow,
-        builder: (_, __) => Container(
-          height: 30,
-          decoration: BoxDecoration(
-            color: widget.isGenerating
-                ? Color.lerp(
-                    ObsidianTheme.primary,
-                    const Color(0xFFFF6B5E),
-                    _glow.value,
-                  )!
-                : ObsidianTheme.primary,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: widget.isGenerating
-                  ? ObsidianTheme.primaryLight.withOpacity(_glow.value)
-                  : ObsidianTheme.primaryDark,
+        builder: (_, __) {
+          final Color bgColor;
+          final Color borderColor;
+          final Color textColor;
+
+          if (widget.isDisabled) {
+            bgColor = ObsidianTheme.cardBg;
+            borderColor = ObsidianTheme.border;
+            textColor = ObsidianTheme.textSecondary.withOpacity(0.4);
+          } else if (widget.isGenerating) {
+            bgColor = Color.lerp(colorA, colorB, _glow.value)!;
+            borderColor = colorB.withOpacity(0.6 + _glow.value * 0.4);
+            textColor = ObsidianTheme.textOnPrimary;
+          } else {
+            bgColor = colorA;
+            borderColor = colorA.withOpacity(0.6);
+            textColor = ObsidianTheme.textOnPrimary;
+          }
+
+          return Container(
+            height: 30,
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: borderColor),
             ),
-          ),
-          child: Center(
-            child: Text(
-              widget.isGenerating ? 'GEN…' : 'GEN',
-              style: ObsidianTheme.labelBold.copyWith(
-                color: ObsidianTheme.textOnPrimary,
+            child: Center(
+              child: Text(
+                widget.isGenerating ? 'GEN…' : 'GEN',
+                style: ObsidianTheme.labelBold.copyWith(color: textColor),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

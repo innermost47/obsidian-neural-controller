@@ -13,7 +13,9 @@ class MidiService extends ChangeNotifier {
 
   StreamSubscription? _deviceSub;
   StreamSubscription? _rxSub;
+
   Function(String type, int channel, int data1, int data2)? onMidiMessage;
+  Function(int cc, int value)? onFeedbackMessage;
 
   ConnectionState get state => _state;
   String get deviceName => _deviceName;
@@ -22,16 +24,15 @@ class MidiService extends ChangeNotifier {
   void startScanning() {
     _state = ConnectionState.scanning;
     notifyListeners();
-
     _deviceSub = _midi.onMidiSetupChanged?.listen((_) => _refreshDevices());
     _rxSub = _midi.onMidiDataReceived?.listen(_handleIncomingMidi);
-
     _refreshDevices();
   }
 
   void _handleIncomingMidi(MidiPacket packet) {
     final Uint8List data = packet.data;
     if (data.isEmpty) return;
+
     int statusByte = data[0];
     int status = statusByte & 0xF0;
     int channel = (statusByte & 0x0F) + 1;
@@ -41,12 +42,15 @@ class MidiService extends ChangeNotifier {
     int data1 = data.length > 1 ? data[1] : 0;
     int data2 = data.length > 2 ? data[2] : 0;
 
-    String type = 'unknown';
+    if (channel == MidiMapping.feedbackChannel + 1 && status == 0xB0) {
+      onFeedbackMessage?.call(data1, data2);
+      return;
+    }
 
+    String type = 'unknown';
     switch (status) {
       case 0x90:
         type = (data2 > 0) ? 'noteOn' : 'noteOff';
-        if (data2 == 0) type = 'noteOff';
         break;
       case 0x80:
         type = 'noteOff';
@@ -60,14 +64,7 @@ class MidiService extends ChangeNotifier {
       default:
         return;
     }
-
-    print('MIDI IN [$type] -> Ch: $channel | Data1: $data1 | Data2: $data2');
-
-    if (onMidiMessage != null) {
-      int d1 = data.length > 1 ? data[1] : 0;
-      int d2 = data.length > 2 ? data[2] : 0;
-      onMidiMessage!(type, channel, d1, d2);
-    }
+    onMidiMessage?.call(type, channel, data1, data2);
   }
 
   Future<void> _refreshDevices() async {
@@ -91,7 +88,6 @@ class MidiService extends ChangeNotifier {
       _connectedDevice = device;
       _deviceName = device.name;
       _state = ConnectionState.connected;
-      print('MIDI: Connected to $_deviceName');
       notifyListeners();
     } catch (e) {
       _state = ConnectionState.error;

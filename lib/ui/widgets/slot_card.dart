@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../model/models.dart';
 import '../../model/app_controller.dart';
 import '../theme.dart';
@@ -144,29 +145,110 @@ class _PageRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDisabled = slot.isGenerating;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('PAGE', style: ObsidianTheme.labelTiny),
         const SizedBox(height: 3),
-        Row(
-          children: List.generate(4, (i) {
-            final label = ['A', 'B', 'C', 'D'][i];
-            return Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(right: i < 3 ? 3 : 0),
-                child: ObsidianPill(
-                  label: label,
-                  active: slot.currentPage == i,
-                  onTap: () => ctrl.setPage(slot.index, i),
-                  activeColor: ObsidianTheme.pageColors[i],
-                  size: 26,
+        Opacity(
+          opacity: isDisabled ? 0.3 : 1.0,
+          child: Row(
+            children: List.generate(4, (i) {
+              final label = ['A', 'B', 'C', 'D'][i];
+              final isPendingTarget =
+                  slot.pendingPage && slot.pendingPageTarget == i;
+              final isCurrent = slot.currentPage == i && !slot.pendingPage;
+              return Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(right: i < 3 ? 3 : 0),
+                  child: isPendingTarget
+                      ? _PendingPagePill(
+                          label: label,
+                          color: ObsidianTheme.pageColors[i],
+                          onTap: isDisabled
+                              ? () {}
+                              : () => ctrl.setPage(slot.index, i),
+                        )
+                      : ObsidianPill(
+                          label: label,
+                          active: isCurrent,
+                          onTap: isDisabled
+                              ? () {}
+                              : () => ctrl.setPage(slot.index, i),
+                          activeColor: ObsidianTheme.pageColors[i],
+                          size: 26,
+                        ),
                 ),
-              ),
-            );
-          }),
+              );
+            }),
+          ),
         ),
       ],
+    );
+  }
+}
+
+class _PendingPagePill extends StatefulWidget {
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  const _PendingPagePill(
+      {required this.label, required this.color, required this.onTap});
+
+  @override
+  State<_PendingPagePill> createState() => _PendingPagePillState();
+}
+
+class _PendingPagePillState extends State<_PendingPagePill>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    )..repeat(reverse: true);
+    _pulse = Tween(begin: 0.2, end: 1.0).animate(_ctrl);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) {
+        HapticFeedback.lightImpact();
+        widget.onTap();
+      },
+      child: AnimatedBuilder(
+        animation: _pulse,
+        builder: (_, __) => Container(
+          height: 26,
+          decoration: BoxDecoration(
+            color: widget.color.withOpacity(_pulse.value),
+            borderRadius: BorderRadius.circular(5),
+            border: Border.all(color: widget.color),
+          ),
+          child: Center(
+            child: Text(
+              widget.label,
+              style: ObsidianTheme.labelTiny.copyWith(
+                color: ObsidianTheme.textOnPrimary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -254,12 +336,20 @@ class _PlayGenRow extends StatelessWidget {
         Expanded(
           child: SizedBox(
             height: 44,
-            child: ObsidianIconBtn(
-              icon: Icons.play_arrow,
-              active: slot.isPlaying,
+            child: ObsidianActionButton(
+              idleIcon: Icons.play_arrow,
+              activeIcon: Icons.stop,
+              pendingIcon: slot.pendingStop ? Icons.stop : Icons.play_arrow,
+              state: slot.pendingPlay
+                  ? ActionState.pending
+                  : slot.pendingStop
+                      ? ActionState.pending
+                      : slot.isPlaying
+                          ? ActionState.active
+                          : ActionState.idle,
               onTap: () => ctrl.playSlot(slot.index),
               activeColor: ObsidianTheme.primary,
-              size: 28,
+              size: 44,
               tooltip: 'Play',
             ),
           ),
@@ -270,6 +360,7 @@ class _PlayGenRow extends StatelessWidget {
             height: 44,
             child: GenerateButton(
               isGenerating: slot.isGenerating,
+              isDisabled: !slot.isGenerating && ctrl.isAnyGenerating,
               onTap: () => ctrl.generateSlot(slot.index),
             ),
           ),

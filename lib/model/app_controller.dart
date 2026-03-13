@@ -1,22 +1,59 @@
-import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../midi/midi_service.dart';
+import '../midi/midi_mapping.dart';
 import 'models.dart';
 
 class AppController extends ChangeNotifier {
   final MidiService midi;
 
   List<SlotState> _slots = List.generate(8, (i) => SlotState(index: i + 1));
-  MasterState _master = const MasterState();
   int _selectedSlot = 0;
-
+  bool get isAnyGenerating => _slots.any((s) => s.isGenerating);
+  int get generatingSlot => _slots.indexWhere((s) => s.isGenerating) + 1;
   List<SlotState> get slots => _slots;
-  MasterState get master => _master;
   int get selectedSlot => _selectedSlot;
   SlotState get currentSlot => _slots[_selectedSlot];
 
   AppController({required this.midi}) {
     midi.startScanning();
+    midi.onFeedbackMessage = _handleFeedback;
+  }
+
+  void _handleFeedback(int cc, int value) {
+    for (int i = 1; i <= 8; i++) {
+      if (cc == MidiMapping.ccFeedbackPlay(i)) {
+        if (value == MidiMapping.feedbackIdle)
+          _updateSlot(
+              i,
+              (s) => s.copyWith(
+                  isPlaying: false, pendingPlay: false, pendingStop: false));
+        else if (value == MidiMapping.feedbackPending)
+          _updateSlot(
+              i,
+              (s) => s.isPlaying
+                  ? s.copyWith(pendingStop: true, pendingPlay: false)
+                  : s.copyWith(pendingPlay: true, pendingStop: false));
+        else if (value == MidiMapping.feedbackActive)
+          _updateSlot(
+              i,
+              (s) => s.copyWith(
+                  isPlaying: true, pendingPlay: false, pendingStop: false));
+      }
+      if (cc == MidiMapping.ccFeedbackGenerate(i)) {
+        _updateSlot(i,
+            (s) => s.copyWith(isGenerating: value != MidiMapping.feedbackIdle));
+        return;
+      }
+      if (cc == MidiMapping.ccFeedbackPage(i)) {
+        if (value == MidiMapping.feedbackPending) {
+          _updateSlot(i, (s) => s.copyWith(pendingPage: true));
+        } else {
+          _updateSlot(
+              i, (s) => s.copyWith(pendingPage: false, pendingPageTarget: -1));
+        }
+        return;
+      }
+    }
   }
 
   void selectSlot(int index) {
@@ -26,21 +63,15 @@ class AppController extends ChangeNotifier {
 
   void playSlot(int slot) {
     midi.playSlot(slot);
-    _updateSlot(slot, (s) => s.copyWith(isPlaying: true));
   }
 
   void stopSlot(int slot) {
     midi.stopSlot(slot);
-    _updateSlot(slot, (s) => s.copyWith(isPlaying: false));
   }
 
   void generateSlot(int slot) {
+    if (isAnyGenerating) return;
     midi.generateSlot(slot);
-    _updateSlot(slot, (s) => s.copyWith(isGenerating: true));
-    Future.delayed(
-      const Duration(milliseconds: 500),
-      () => _updateSlot(slot, (s) => s.copyWith(isGenerating: false)),
-    );
   }
 
   void setVolume(int slot, double value) {
@@ -82,29 +113,20 @@ class AppController extends ChangeNotifier {
   }
 
   void setPage(int slot, int page) {
+    if (_slots[slot - 1].isGenerating) return;
     midi.setPage(slot, page);
-    _updateSlot(slot, (s) => s.copyWith(currentPage: page));
+    _updateSlot(
+        slot,
+        (s) => s.copyWith(
+              currentPage: page,
+              pendingPageTarget: page,
+            ));
   }
 
   void setSeq(int slot, int seq) {
     midi.setSeqPattern(slot, seq);
     _updateSlot(slot, (s) => s.copyWith(currentSeq: seq));
   }
-
-  void setMasterVolume(double value) {
-    midi.setMasterVolume(value);
-    _master = _master.copyWith(volume: value);
-    notifyListeners();
-  }
-
-  void setMasterPan(double value) {
-    midi.setMasterPan(value);
-    _master = _master.copyWith(pan: value);
-    notifyListeners();
-  }
-
-  void nextTrack() => midi.nextTrack();
-  void prevTrack() => midi.prevTrack();
 
   void _updateSlot(int slot, SlotState Function(SlotState) fn) {
     final list = List<SlotState>.from(_slots);
