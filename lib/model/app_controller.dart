@@ -52,6 +52,13 @@ class AppController extends ChangeNotifier {
       if (cc == MidiMapping.ccFeedbackPage(i)) {
         if (value == MidiMapping.feedbackPending) {
           _updateSlot(i, (s) => s.copyWith(pendingPage: true));
+        } else if (value >= 80 && value <= 83) {
+          _updateSlot(
+              i,
+              (s) => s.copyWith(
+                    pendingPage: true,
+                    pendingPageTarget: value - 80,
+                  ));
         } else {
           _updateSlot(
               i,
