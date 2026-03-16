@@ -54,7 +54,7 @@ class SlotCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _Header(slot: slot, midiNote: _midiNote()),
+                    _Header(slot: slot, midiNote: _midiNote(), ctrl: ctrl),
                     const SizedBox(height: 12),
                     _PageRow(slot: slot, ctrl: ctrl),
                     const SizedBox(height: 8),
@@ -124,16 +124,110 @@ class _KnobsRow extends StatelessWidget {
 class _Header extends StatelessWidget {
   final SlotState slot;
   final String midiNote;
-  const _Header({required this.slot, required this.midiNote});
+  final AppController ctrl;
+
+  const _Header({
+    required this.slot,
+    required this.midiNote,
+    required this.ctrl,
+  });
+
+  void _showRenameDialog(BuildContext context) {
+    final textCtrl = TextEditingController(text: slot.name);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: ObsidianTheme.cardBg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Rename', style: ObsidianTheme.slotTitle),
+            const SizedBox(height: 12),
+            TextField(
+              controller: textCtrl,
+              autofocus: true,
+              maxLength: 20,
+              style: ObsidianTheme.slotTitle,
+              decoration: InputDecoration(
+                hintText: 'Slot ${slot.index}',
+                hintStyle: ObsidianTheme.labelSmall
+                    .copyWith(color: ObsidianTheme.textMuted),
+                counterStyle: ObsidianTheme.labelTiny
+                    .copyWith(color: ObsidianTheme.textMuted),
+                enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: ObsidianTheme.border)),
+                focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: ObsidianTheme.primary)),
+              ),
+              onSubmitted: (v) {
+                ctrl.renameSlot(slot.index, v.trim());
+                Navigator.pop(ctx);
+              },
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: Text('Cancel',
+                      style: ObsidianTheme.labelSmall
+                          .copyWith(color: ObsidianTheme.textMuted)),
+                ),
+                TextButton(
+                  onPressed: () {
+                    ctrl.renameSlot(slot.index, textCtrl.text.trim());
+                    Navigator.pop(ctx);
+                  },
+                  child: Text('OK',
+                      style: ObsidianTheme.labelSmall
+                          .copyWith(color: ObsidianTheme.primary)),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(slot.displayName, style: ObsidianTheme.slotTitle),
-        Text(midiNote, style: ObsidianTheme.noteLabel),
-      ],
+    return GestureDetector(
+      onTap: () => _showRenameDialog(context),
+      behavior: HitTestBehavior.opaque,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                Flexible(
+                  child: Text(slot.displayName, style: ObsidianTheme.slotTitle),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.edit_outlined,
+                  size: 10,
+                  color: ObsidianTheme.textMuted,
+                ),
+              ],
+            ),
+          ),
+          Text(midiNote, style: ObsidianTheme.noteLabel),
+        ],
+      ),
     );
   }
 }

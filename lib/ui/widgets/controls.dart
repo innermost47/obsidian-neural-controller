@@ -287,6 +287,7 @@ class _ObsidianFaderState extends State<ObsidianFader> {
               final h = constraints.maxHeight;
 
               return GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onVerticalDragStart: (d) {
                   _dragStart = d.localPosition.dy;
                   _valueStart = widget.value;
@@ -297,7 +298,7 @@ class _ObsidianFaderState extends State<ObsidianFader> {
                   widget.onChanged((_valueStart + delta).clamp(0.0, 1.0));
                 },
                 child: SizedBox(
-                  width: 28,
+                  width: 44,
                   height: h,
                   child: Stack(
                     alignment: Alignment.center,

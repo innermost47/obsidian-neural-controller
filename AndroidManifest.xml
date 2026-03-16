@@ -9,6 +9,7 @@
         android:label="OBSIDIAN Controller"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="true"
         android:screenOrientation="sensorLandscape">
 
         <activity
@@ -18,7 +19,7 @@
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
-            android:windowSoftInputMode="adjustResize"
+            android:windowSoftInputMode="adjustNothing"
             android:screenOrientation="sensorLandscape">
 
             <intent-filter>

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../midi/midi_service.dart';
 import '../midi/midi_mapping.dart';
+import '../services/preset_service.dart';
 import 'models.dart';
 
 class AppController extends ChangeNotifier {
@@ -13,6 +14,10 @@ class AppController extends ChangeNotifier {
   List<SlotState> get slots => _slots;
   int get selectedSlot => _selectedSlot;
   SlotState get currentSlot => _slots[_selectedSlot];
+  String? _currentPresetId;
+  String? get currentPresetId => _currentPresetId;
+  String? _currentPresetName;
+  String? get currentPresetName => _currentPresetName;
 
   AppController({required this.midi}) {
     midi.onFeedbackMessage = _handleFeedback;
@@ -191,6 +196,34 @@ class AppController extends ChangeNotifier {
     list[slot - 1] = fn(list[slot - 1]);
     _slots = list;
     notifyListeners();
+  }
+
+  void renameSlot(int slot, String name) {
+    _updateSlot(slot, (s) => s.copyWith(name: name));
+  }
+
+  Future<void> saveCurrentPreset(PresetService service) async {
+    if (_currentPresetId == null) return;
+    final preset = Preset(
+      id: _currentPresetId!,
+      name: _currentPresetName!,
+      trackNames: _slots.map((s) => s.name).toList(),
+    );
+    await service.save(preset);
+  }
+
+  void loadPreset(Preset preset) {
+    for (var j = 0; j < preset.trackNames.length && j < 8; j++) {
+      renameSlot(j + 1, preset.trackNames[j]);
+    }
+    _currentPresetId = preset.id;
+    _currentPresetName = preset.name;
+    notifyListeners();
+  }
+
+  void clearCurrentPreset() {
+    _currentPresetId = null;
+    _currentPresetName = null;
   }
 
   @override
