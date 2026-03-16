@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import '../theme.dart';
+import '../../services/haptic.dart';
 
 enum ActionState { idle, pending, active }
 
@@ -77,7 +78,7 @@ class _ObsidianActionButtonState extends State<ObsidianActionButton>
 
     return GestureDetector(
       onTapDown: (_) {
-        HapticFeedback.lightImpact();
+        Haptic.light();
         widget.onTap();
       },
       child: AnimatedBuilder(
@@ -160,7 +161,7 @@ class _ObsidianKnobState extends State<ObsidianKnob> {
 
             final currentVal = (newValue * 10).round();
             if (currentVal != _lastHapticValue) {
-              HapticFeedback.lightImpact();
+              Haptic.light();
               _lastHapticValue = currentVal;
             }
 
@@ -379,7 +380,7 @@ class ObsidianPill extends StatelessWidget {
     final color = activeColor ?? ObsidianTheme.primary;
     return GestureDetector(
       onTapDown: (_) {
-        HapticFeedback.lightImpact();
+        Haptic.light();
         onTap();
       },
       child: AnimatedContainer(
@@ -428,7 +429,7 @@ class ObsidianIconBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final btn = GestureDetector(
-      onTapDown: (_) => HapticFeedback.lightImpact(),
+      onTapDown: (_) => Haptic.light(),
       onTapUp: (_) => onTap(),
       onTapCancel: () {},
       child: AnimatedContainer(
@@ -512,7 +513,7 @@ class _GenerateButtonState extends State<GenerateButton>
     return GestureDetector(
       onTapDown: (_) {
         if (widget.isDisabled || widget.isGenerating) return;
-        HapticFeedback.mediumImpact();
+        Haptic.medium();
         widget.onTap();
       },
       child: AnimatedBuilder(

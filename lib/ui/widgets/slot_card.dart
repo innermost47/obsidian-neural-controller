@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../model/models.dart';
 import '../../model/app_controller.dart';
 import '../theme.dart';
 import 'controls.dart';
+import '../../services/haptic.dart';
 
 class SlotCard extends StatelessWidget {
   final SlotState slot;
@@ -320,7 +320,7 @@ class _PendingPagePillState extends State<_PendingPagePill>
   Widget build(BuildContext context) {
     return GestureDetector(
       onTapDown: (_) {
-        HapticFeedback.lightImpact();
+        Haptic.light();
         widget.onTap();
       },
       child: AnimatedBuilder(
@@ -354,7 +354,10 @@ class _SeqRow extends StatelessWidget {
 
   Widget _seqPad(int i) {
     return GestureDetector(
-      onTap: () => ctrl.setSeq(slot.index, i),
+      onTapDown: (_) {
+        Haptic.light();
+        ctrl.setSeq(slot.index, i);
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 100),
         height: 36,
@@ -492,11 +495,41 @@ class _BottomRow extends StatelessWidget {
         ),
         const SizedBox(width: 4),
         Expanded(
-          child: ObsidianPill(
-            label: '↻',
-            active: slot.beatRepeat,
-            onTap: () => ctrl.toggleBeatRepeat(slot.index),
-            activeColor: ObsidianTheme.beatRepeatOn,
+          child: GestureDetector(
+            onTapDown: (_) {
+              Haptic.light();
+              ctrl.setBeatRepeatHold(slot.index, true);
+            },
+            onTapUp: (_) => ctrl.setBeatRepeatHold(slot.index, false),
+            onTapCancel: () => ctrl.setBeatRepeatHold(slot.index, false),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 120),
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: slot.beatRepeat
+                    ? ObsidianTheme.beatRepeatOn
+                    : ObsidianTheme.cardBg,
+                borderRadius: BorderRadius.circular(5),
+                border: Border.all(
+                  color: slot.beatRepeat
+                      ? ObsidianTheme.beatRepeatOn
+                      : ObsidianTheme.border,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  '↻',
+                  style: ObsidianTheme.labelTiny.copyWith(
+                    color: slot.beatRepeat
+                        ? ObsidianTheme.textOnPrimary
+                        : ObsidianTheme.textSecondary,
+                    fontWeight:
+                        slot.beatRepeat ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       ],

@@ -115,6 +115,11 @@ class AppController extends ChangeNotifier {
     }
   }
 
+  void setBeatRepeatHold(int slot, bool active) {
+    midi.setBeatRepeat(slot, active);
+    _updateSlot(slot, (s) => s.copyWith(beatRepeat: active));
+  }
+
   void syncState() {
     midi.requestState();
   }
