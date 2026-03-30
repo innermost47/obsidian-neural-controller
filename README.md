@@ -1,6 +1,20 @@
 # OBSIDIAN Neural — Mobile Controller
 
-> A Flutter-based USB MIDI surface controller for the [OBSIDIAN Neural VST3 plugin](https://github.com/innermost47/ai-dj) — real-time AI music generation for live performance.
+### Related Repositories
+
+| Repository                                                                                                 | Description                                  |
+| ---------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| [obsidian-neural-central](https://github.com/innermost47/obsidian-neural-central)                          | Central inference server                     |
+| [obsidian-neural-provider](https://github.com/innermost47/obsidian-neural-provider)                        | Provider kit — run a GPU node on the network |
+| [obsidian-neural-frontend](https://github.com/innermost47/obsidian-neural-frontend)                        | Storefront & dashboard                       |
+| **[obsidian-neural-controller](https://github.com/innermost47/obsidian-neural-controller)** ← you are here | Mobile MIDI controller app                   |
+| [ai-dj](https://github.com/innermost47/ai-dj)                                                              | VST3/AU plugin (client)                      |
+
+---
+
+## Overview
+
+A Flutter-based USB MIDI surface controller for the [OBSIDIAN Neural VST3 plugin](https://github.com/innermost47/ai-dj) — real-time AI music generation for live performance.
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.10+-blue)](https://flutter.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS-green)](https://github.com/innermost47/ai-dj)
