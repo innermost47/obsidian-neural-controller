@@ -333,14 +333,17 @@ class _ObsidianFaderState extends State<ObsidianFader> {
                       Positioned(
                         bottom: (h * widget.value).clamp(0.0, h) - 5,
                         child: Container(
-                          width: 20,
+                          width: 22,
                           height: 10,
                           decoration: BoxDecoration(
-                            color: ObsidianTheme.surfaceLight,
+                            color: widget.accentColor,
                             borderRadius: BorderRadius.circular(3),
-                            border: Border.all(color: ObsidianTheme.border),
-                            boxShadow: const [
-                              BoxShadow(color: Colors.black12, blurRadius: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: widget.accentColor.withOpacity(0.5),
+                                blurRadius: 6,
+                                spreadRadius: 1,
+                              ),
                             ],
                           ),
                         ),
