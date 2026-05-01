@@ -15,7 +15,8 @@ class MidiService extends ChangeNotifier {
   StreamSubscription? _rxSub;
 
   Function(String type, int channel, int data1, int data2)? onMidiMessage;
-  Function(int cc, int value)? onFeedbackMessage;
+  Function(int cc, int value)? onMixerFeedback;
+  Function(int cc, int value)? onShapingFeedback;
   Function()? onDeviceConnected;
 
   ConnectionState get state => _state;
@@ -37,21 +38,21 @@ class MidiService extends ChangeNotifier {
   void _handleIncomingMidi(MidiPacket packet) {
     final Uint8List data = packet.data;
     if (data.isEmpty) return;
-
     int statusByte = data[0];
     int status = statusByte & 0xF0;
     int channel = (statusByte & 0x0F) + 1;
-
     if (data.length < 3 && status != 0xD0) return;
-
     int data1 = data.length > 1 ? data[1] : 0;
     int data2 = data.length > 2 ? data[2] : 0;
-
-    if (channel == MidiMapping.feedbackChannel + 1 && status == 0xB0) {
-      onFeedbackMessage?.call(data1, data2);
-      return;
+    if (status == 0xB0) {
+      if (channel == MidiMapping.feedbackChannelMixer + 1) {
+        onMixerFeedback?.call(data1, data2);
+        return;
+      } else if (channel == MidiMapping.feedbackChannelShaping + 1) {
+        onShapingFeedback?.call(data1, data2);
+        return;
+      }
     }
-
     String type = 'unknown';
     switch (status) {
       case 0x90:
@@ -114,7 +115,6 @@ class MidiService extends ChangeNotifier {
   }
 
   void _sendCC(int cc, int value, int channel) {
-    print('MIDI OUT [CC] -> CH: ${channel + 1} | ID: $cc | Val: $value');
     if (!isConnected) return;
     _midi.sendData(
       Uint8List.fromList([0xB0 | channel, cc, value.clamp(0, 127)]),
@@ -123,8 +123,6 @@ class MidiService extends ChangeNotifier {
   }
 
   void _sendNoteOn(int note, int channel, {int velocity = 100}) {
-    print(
-        'MIDI OUT [NoteOn] -> CH: ${channel + 1} | Note: $note | Vel: $velocity');
     if (!isConnected) return;
     _midi.sendData(
       Uint8List.fromList([0x90 | channel, note, velocity]),
@@ -133,7 +131,6 @@ class MidiService extends ChangeNotifier {
   }
 
   void _sendNoteOff(int note, int channel) {
-    print('MIDI OUT [NoteOff] -> CH: ${channel + 1} | Note: $note');
     if (!isConnected) return;
     _midi.sendData(
       Uint8List.fromList([0x80 | channel, note, 0]),

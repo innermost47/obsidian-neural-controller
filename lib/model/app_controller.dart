@@ -26,7 +26,8 @@ class AppController extends ChangeNotifier {
   int get crossfaderCurveMode => _crossfaderCurveMode;
 
   AppController({required this.midi}) {
-    midi.onFeedbackMessage = _handleFeedback;
+    midi.onMixerFeedback = _handleMixerFeedback;
+    midi.onShapingFeedback = _handleShapingFeedback;
     midi.onDeviceConnected = () {
       Future.delayed(const Duration(milliseconds: 500), () {
         midi.requestState();
@@ -35,7 +36,7 @@ class AppController extends ChangeNotifier {
     midi.startScanning();
   }
 
-  void _handleFeedback(int cc, int value) {
+  void _handleMixerFeedback(int cc, int value) {
     for (int i = 1; i <= 8; i++) {
       if (cc == MidiMapping.ccFeedbackPlay(i)) {
         if (value == MidiMapping.feedbackIdle)
@@ -47,78 +48,85 @@ class AppController extends ChangeNotifier {
           _updateSlot(
               i,
               (s) => s.isPlaying
-                  ? s.copyWith(pendingStop: true, pendingPlay: false)
-                  : s.copyWith(pendingPlay: true, pendingStop: false));
+                  ? s.copyWith(pendingStop: true)
+                  : s.copyWith(pendingPlay: true));
         else if (value == MidiMapping.feedbackActive)
           _updateSlot(
               i,
               (s) => s.copyWith(
                   isPlaying: true, pendingPlay: false, pendingStop: false));
       }
-      if (cc == MidiMapping.ccFeedbackGenerate(i)) {
-        _updateSlot(i,
-            (s) => s.copyWith(isGenerating: value != MidiMapping.feedbackIdle));
-        return;
-      }
-      if (cc == MidiMapping.ccFeedbackPage(i)) {
-        if (value == MidiMapping.feedbackPending) {
-          _updateSlot(i, (s) => s.copyWith(pendingPage: true));
-        } else if (value >= 80 && value <= 83) {
-          _updateSlot(
-              i,
-              (s) => s.copyWith(
-                    pendingPage: true,
-                    pendingPageTarget: value - 80,
-                  ));
-        } else {
-          _updateSlot(
-              i,
-              (s) => s.copyWith(
-                    currentPage: value,
-                    pendingPage: false,
-                    pendingPageTarget: -1,
-                  ));
-        }
-        return;
-      }
       if (cc == MidiMapping.ccFeedbackVolume(i)) {
         _updateSlot(i, (s) => s.copyWith(volume: value / 127.0));
-        return;
       }
       if (cc == MidiMapping.ccFeedbackPan(i)) {
         _updateSlot(i, (s) => s.copyWith(pan: (value / 127.0) * 2.0 - 1.0));
-        return;
-      }
-      if (cc == MidiMapping.ccFeedbackPitch(i)) {
-        _updateSlot(
-            i, (s) => s.copyWith(pitch: (value / 127.0) * 192.0 - 96.0));
-        return;
-      }
-      if (cc == MidiMapping.ccFeedbackFine(i)) {
-        _updateSlot(
-            i, (s) => s.copyWith(fine: (value / 127.0) * 200.0 - 100.0));
-        return;
       }
       if (cc == MidiMapping.ccFeedbackMute(i)) {
         _updateSlot(
             i, (s) => s.copyWith(isMuted: value == MidiMapping.feedbackActive));
-        return;
       }
       if (cc == MidiMapping.ccFeedbackSolo(i)) {
         _updateSlot(
             i, (s) => s.copyWith(isSolo: value == MidiMapping.feedbackActive));
+      }
+      if (cc == MidiMapping.ccFeedbackPage(i)) {
+        _updateSlot(
+            i, (s) => s.copyWith(currentPage: value, pendingPage: false));
+      }
+    }
+  }
+
+  void _handleShapingFeedback(int cc, int value) {
+    for (int i = 1; i <= 4; i++) {
+      if (cc == MidiMapping.ccFeedbackPairCrossfader(i)) {
+        _updatePairCrossfaderState(i - 1, value / 127.0);
         return;
+      }
+    }
+    if (cc == MidiMapping.ccFeedbackGlobalCrossfader) {
+      _updateGlobalCrossfaderState(value / 127.0);
+      return;
+    }
+    if (cc == MidiMapping.ccFeedbackCrossfaderCurve) {
+      _updateCrossfaderCurveState((value / 63).round());
+      return;
+    }
+
+    for (int i = 1; i <= 8; i++) {
+      if (cc == MidiMapping.ccFeedbackPitch(i)) {
+        _updateSlot(
+            i, (s) => s.copyWith(pitch: (value / 127.0) * 192.0 - 96.0));
+      }
+      if (cc == MidiMapping.ccFeedbackFine(i)) {
+        _updateSlot(
+            i, (s) => s.copyWith(fine: (value / 127.0) * 200.0 - 100.0));
+      }
+      if (cc == MidiMapping.ccFeedbackSeq(i)) {
+        _updateSlot(i, (s) => s.copyWith(currentSeq: value));
       }
       if (cc == MidiMapping.ccFeedbackBeatRepeat(i)) {
         _updateSlot(i,
             (s) => s.copyWith(beatRepeat: value == MidiMapping.feedbackActive));
-        return;
-      }
-      if (cc == MidiMapping.ccFeedbackSeq(i)) {
-        _updateSlot(i, (s) => s.copyWith(currentSeq: value));
-        return;
       }
     }
+  }
+
+  void _updatePairCrossfaderState(int index, double value) {
+    final list = List<double>.from(_pairCrossfaders);
+    list[index] = value;
+    _pairCrossfaders = list;
+    notifyListeners();
+  }
+
+  void _updateGlobalCrossfaderState(double value) {
+    _globalCrossfader = value;
+    notifyListeners();
+  }
+
+  void _updateCrossfaderCurveState(int mode) {
+    _crossfaderCurveMode = mode.clamp(0, 2);
+    notifyListeners();
   }
 
   void setBeatRepeatHold(int slot, bool active) {

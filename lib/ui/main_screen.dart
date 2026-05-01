@@ -416,7 +416,6 @@ class _TopBar extends StatelessWidget {
           ),
           GestureDetector(
             onTap: () {
-              print('🔄 Sync tapped');
               ctrl.syncState();
             },
             child: Container(
