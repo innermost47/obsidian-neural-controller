@@ -78,9 +78,9 @@ class AppController extends ChangeNotifier {
   }
 
   void _handleShapingFeedback(int cc, int value) {
-    for (int i = 1; i <= 4; i++) {
+    for (int i = 0; i < 4; i++) {
       if (cc == MidiMapping.ccFeedbackPairCrossfader(i)) {
-        _updatePairCrossfaderState(i - 1, value / 127.0);
+        _updatePairCrossfaderState(i, value / 127.0);
         return;
       }
     }
@@ -89,7 +89,7 @@ class AppController extends ChangeNotifier {
       return;
     }
     if (cc == MidiMapping.ccFeedbackCrossfaderCurve) {
-      _updateCrossfaderCurveState((value / 63).round());
+      _updateCrossfaderCurveState(value);
       return;
     }
 
