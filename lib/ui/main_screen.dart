@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/gestures.dart';
 import '../model/app_controller.dart';
 import '../midi/midi_service.dart' hide ConnectionState;
 import '../services/preset_service.dart';
 import 'theme.dart';
+import 'widgets/crossfader_panel.dart';
 import 'widgets/slot_card.dart' show SlotCard;
 import 'widgets/controls.dart' show ConnectionBadge;
 
@@ -453,34 +455,128 @@ class _TopBar extends StatelessWidget {
   }
 }
 
-class _TracksView extends StatelessWidget {
+class _TracksView extends StatefulWidget {
   final AppController ctrl;
   const _TracksView({required this.ctrl});
 
   @override
+  State<_TracksView> createState() => _TracksViewState();
+}
+
+class _TracksViewState extends State<_TracksView> {
+  int _selectedIndex = 0;
+  final List<String> labels = [
+    "T1",
+    "T2",
+    "T3",
+    "T4",
+    "Cross",
+    "T5",
+    "T6",
+    "T7",
+    "T8"
+  ];
+  final ScrollController _scrollController = ScrollController();
+  static const double itemWidth = 280.0;
+
+  void _scrollToIndex(int index) {
+    const double itemWidthWithMargin = 290.0;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final targetOffset =
+        (index * itemWidthWithMargin) - (screenWidth / 2) + (280 / 2);
+
+    _scrollController.animateTo(
+      targetOffset.clamp(
+        _scrollController.position.minScrollExtent,
+        _scrollController.position.maxScrollExtent,
+      ),
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Column(
       children: [
         Expanded(
           child: ListView.builder(
+            controller: _scrollController,
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            itemCount: 8,
-            itemBuilder: (context, i) {
-              final slot = ctrl.slots[i];
+            itemCount: 9,
+            itemBuilder: (context, index) {
               return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: SlotCard(
-                  slot: slot,
-                  isSelected: ctrl.selectedSlot == i,
-                  ctrl: ctrl,
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                child: SizedBox(
+                  width: itemWidth,
+                  child: Center(
+                    child: Opacity(
+                      opacity: _selectedIndex == index ? 1.0 : 0.7,
+                      child: _buildContent(index),
+                    ),
+                  ),
                 ),
               );
             },
           ),
         ),
+        Container(
+          height: 48,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(9, (index) {
+              return GestureDetector(
+                onTap: () {
+                  setState(() => _selectedIndex = index);
+                  _scrollToIndex(index);
+                },
+                child: Container(
+                  width: 60,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: _selectedIndex == index
+                        ? ObsidianTheme.generateColor
+                        : ObsidianTheme.cardBg,
+                    border: Border.all(color: ObsidianTheme.border),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Center(
+                    child: Text(
+                      labels[index],
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
       ],
+    );
+  }
+
+  Widget _buildContent(int index) {
+    const crossfaderIndex = 4;
+
+    if (index == crossfaderIndex) {
+      return CrossfaderPanel(
+        pairValues: widget.ctrl.pairCrossfaders,
+        curveMode: widget.ctrl.crossfaderCurveMode,
+        onPairChanged: (idx, v) => widget.ctrl.setPairCrossfader(idx, v),
+        onCurveChanged: (m) => widget.ctrl.setCrossfaderCurveMode(m),
+      );
+    }
+
+    final slotIndex = index < crossfaderIndex ? index : index - 1;
+    return SlotCard(
+      slot: widget.ctrl.slots[slotIndex],
+      isSelected: _selectedIndex == index,
+      ctrl: widget.ctrl,
     );
   }
 }

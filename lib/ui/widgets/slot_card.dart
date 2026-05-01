@@ -45,7 +45,7 @@ class SlotCard extends StatelessWidget {
         margin: const EdgeInsets.symmetric(vertical: 8),
         padding: const EdgeInsets.all(10),
         decoration: ObsidianTheme.cardDecoration(),
-        child: IntrinsicHeight(
+        child: SizedBox(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -55,15 +55,15 @@ class SlotCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _Header(slot: slot, midiNote: _midiNote(), ctrl: ctrl),
-                    const SizedBox(height: 12),
-                    _PageRow(slot: slot, ctrl: ctrl),
                     const SizedBox(height: 8),
+                    _PageRow(slot: slot, ctrl: ctrl),
+                    const SizedBox(height: 6),
                     _SeqRow(slot: slot, ctrl: ctrl),
                     const SizedBox(height: 10),
                     _PlayGenRow(slot: slot, ctrl: ctrl),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 12),
                     _BottomRow(slot: slot, ctrl: ctrl),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 6),
                     _KnobsRow(slot: slot, ctrl: ctrl),
                   ],
                 ),
@@ -360,7 +360,7 @@ class _SeqRow extends StatelessWidget {
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 100),
-        height: 36,
+        height: 30,
         decoration: BoxDecoration(
           color: slot.currentSeq == i
               ? ObsidianTheme.primary
@@ -432,7 +432,7 @@ class _PlayGenRow extends StatelessWidget {
       children: [
         Expanded(
           child: SizedBox(
-            height: 44,
+            height: 32,
             child: ObsidianActionButton(
               idleIcon: Icons.play_arrow,
               activeIcon: Icons.stop,
@@ -454,7 +454,7 @@ class _PlayGenRow extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: SizedBox(
-            height: 44,
+            height: 32,
             child: GenerateButton(
               isGenerating: slot.isGenerating,
               isDisabled: !slot.isGenerating && ctrl.isAnyGenerating,

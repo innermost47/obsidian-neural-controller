@@ -31,7 +31,7 @@ class MidiService extends ChangeNotifier {
   }
 
   void requestState() {
-    _sendCC(MidiMapping.ccRequestState, 127);
+    _sendCC(MidiMapping.ccRequestState, 127, MidiMapping.channelPerf);
   }
 
   void _handleIncomingMidi(MidiPacket packet) {
@@ -113,99 +113,163 @@ class MidiService extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _sendCC(int cc, int value) {
-    print('MIDI OUT [CC] -> ID: $cc | Val: $value');
+  void _sendCC(int cc, int value, int channel) {
+    print('MIDI OUT [CC] -> CH: ${channel + 1} | ID: $cc | Val: $value');
     if (!isConnected) return;
     _midi.sendData(
-      Uint8List.fromList([0xB0 | MidiMapping.channel, cc, value.clamp(0, 127)]),
+      Uint8List.fromList([0xB0 | channel, cc, value.clamp(0, 127)]),
       deviceId: _connectedDevice?.id,
     );
   }
 
-  void _sendNoteOn(int note, {int velocity = 100}) {
-    print('MIDI OUT [NoteOn] -> Note: $note | Vel: $velocity');
+  void _sendNoteOn(int note, int channel, {int velocity = 100}) {
+    print(
+        'MIDI OUT [NoteOn] -> CH: ${channel + 1} | Note: $note | Vel: $velocity');
     if (!isConnected) return;
     _midi.sendData(
-      Uint8List.fromList([0x90 | MidiMapping.channel, note, velocity]),
+      Uint8List.fromList([0x90 | channel, note, velocity]),
       deviceId: _connectedDevice?.id,
     );
   }
 
-  void _sendNoteOff(int note) {
-    print('MIDI OUT [NoteOff] -> Note: $note');
+  void _sendNoteOff(int note, int channel) {
+    print('MIDI OUT [NoteOff] -> CH: ${channel + 1} | Note: $note');
     if (!isConnected) return;
     _midi.sendData(
-      Uint8List.fromList([0x80 | MidiMapping.channel, note, 0]),
+      Uint8List.fromList([0x80 | channel, note, 0]),
       deviceId: _connectedDevice?.id,
     );
   }
 
   void playSlot(int slot) {
     final note = MidiMapping.slotNote(slot);
-    _sendNoteOn(note, velocity: 127);
+    _sendNoteOn(note, MidiMapping.channelPerf, velocity: 127);
 
     Future.delayed(const Duration(milliseconds: 100), () {
-      _sendNoteOff(note);
+      _sendNoteOff(note, MidiMapping.channelPerf);
     });
   }
 
   void stopSlot(int slot) {
-    _sendCC(MidiMapping.ccStop(slot), 127);
+    _sendCC(MidiMapping.ccStop(slot), 127, MidiMapping.channelPerf);
     Future.delayed(const Duration(milliseconds: 50), () {
-      _sendCC(MidiMapping.ccStop(slot), 0);
+      _sendCC(MidiMapping.ccStop(slot), 0, MidiMapping.channelPerf);
     });
   }
 
   void generateSlot(int slot) {
-    _sendCC(MidiMapping.ccGenerate(slot), 127);
-    Future.delayed(const Duration(milliseconds: 150),
-        () => _sendCC(MidiMapping.ccGenerate(slot), 0));
+    _sendCC(MidiMapping.ccGenerate(slot), 127, MidiMapping.channelPerf);
+    Future.delayed(
+        const Duration(milliseconds: 150),
+        () =>
+            _sendCC(MidiMapping.ccGenerate(slot), 0, MidiMapping.channelPerf));
   }
 
-  void setVolume(int slot, double value) =>
-      _sendCC(MidiMapping.ccVolume(slot), MidiMapping.volumeToMidi(value));
+  void setVolume(int slot, double value) => _sendCC(MidiMapping.ccVolume(slot),
+      MidiMapping.volumeToMidi(value), MidiMapping.channelPerf);
 
-  void setMasterVolume(double value) =>
-      _sendCC(MidiMapping.ccMasterVolume, MidiMapping.volumeToMidi(value));
+  void setMasterVolume(double value) => _sendCC(MidiMapping.ccMasterVolume,
+      MidiMapping.volumeToMidi(value), MidiMapping.channelPerf);
 
-  void setPan(int slot, double value) =>
-      _sendCC(MidiMapping.ccPan(slot), MidiMapping.panToMidi(value));
+  void setPan(int slot, double value) => _sendCC(MidiMapping.ccPan(slot),
+      MidiMapping.panToMidi(value), MidiMapping.channelPerf);
 
-  void setMasterPan(double value) =>
-      _sendCC(MidiMapping.ccMasterPan, MidiMapping.panToMidi(value));
+  void setMasterPan(double value) => _sendCC(MidiMapping.ccMasterPan,
+      MidiMapping.panToMidi(value), MidiMapping.channelPerf);
 
-  void setMute(int slot, bool muted) =>
-      _sendCC(MidiMapping.ccMute(slot), muted ? 127 : 0);
+  void setMute(int slot, bool muted) => _sendCC(
+      MidiMapping.ccMute(slot), muted ? 127 : 0, MidiMapping.channelPerf);
 
-  void setSolo(int slot, bool soloed) =>
-      _sendCC(MidiMapping.ccSolo(slot), soloed ? 127 : 0);
-
-  void setPage(int slot, int page) {
-    _sendCC(MidiMapping.ccPage(slot), MidiMapping.pageToMidi(page));
-  }
-
-  void setPitch(int slot, double semitones) =>
-      _sendCC(MidiMapping.ccPitch(slot), MidiMapping.pitchToMidi(semitones));
-
-  void setFine(int slot, double cents) =>
-      _sendCC(MidiMapping.ccFine(slot), MidiMapping.fineToMidi(cents));
-
-  void setBeatRepeat(int slot, bool active) =>
-      _sendCC(MidiMapping.ccBeatRepeat(slot), active ? 127 : 0);
-
-  void setSeqPattern(int slot, int seqIndex) =>
-      _sendCC(MidiMapping.ccSeq(slot), MidiMapping.seqToMidi(seqIndex));
+  void setSolo(int slot, bool soloed) => _sendCC(
+      MidiMapping.ccSolo(slot), soloed ? 127 : 0, MidiMapping.channelPerf);
 
   void nextTrack() {
-    _sendCC(MidiMapping.ccNextTrack, 127);
+    _sendCC(MidiMapping.ccNextTrack, 127, MidiMapping.channelPerf);
     Future.delayed(const Duration(milliseconds: 100),
-        () => _sendCC(MidiMapping.ccNextTrack, 0));
+        () => _sendCC(MidiMapping.ccNextTrack, 0, MidiMapping.channelPerf));
   }
 
   void prevTrack() {
-    _sendCC(MidiMapping.ccPrevTrack, 127);
+    _sendCC(MidiMapping.ccPrevTrack, 127, MidiMapping.channelPerf);
     Future.delayed(const Duration(milliseconds: 100),
-        () => _sendCC(MidiMapping.ccPrevTrack, 0));
+        () => _sendCC(MidiMapping.ccPrevTrack, 0, MidiMapping.channelPerf));
+  }
+
+  void setPitch(int slot, double semitones) => _sendCC(
+      MidiMapping.ccPitch(slot),
+      MidiMapping.pitchToMidi(semitones),
+      MidiMapping.channelShape);
+
+  void setFine(int slot, double cents) => _sendCC(MidiMapping.ccFine(slot),
+      MidiMapping.fineToMidi(cents), MidiMapping.channelShape);
+
+  void setAdsrAttack(int slot, double normalized) => _sendCC(
+      MidiMapping.ccAdsrAttack(slot),
+      (normalized * 127).round().clamp(0, 127),
+      MidiMapping.channelShape);
+
+  void setAdsrDecay(int slot, double normalized) => _sendCC(
+      MidiMapping.ccAdsrDecay(slot),
+      (normalized * 127).round().clamp(0, 127),
+      MidiMapping.channelShape);
+
+  void setAdsrSustain(int slot, double normalized) => _sendCC(
+      MidiMapping.ccAdsrSustain(slot),
+      (normalized * 127).round().clamp(0, 127),
+      MidiMapping.channelShape);
+
+  void setAdsrRelease(int slot, double normalized) => _sendCC(
+      MidiMapping.ccAdsrRelease(slot),
+      (normalized * 127).round().clamp(0, 127),
+      MidiMapping.channelShape);
+
+  void setBeatRepeat(int slot, bool active) => _sendCC(
+      MidiMapping.ccBeatRepeat(slot),
+      active ? 127 : 0,
+      MidiMapping.channelShape);
+
+  void setPage(int slot, int page) {
+    _sendCC(MidiMapping.ccPage(slot), MidiMapping.pageToMidi(page),
+        MidiMapping.channelShape);
+  }
+
+  void setSeqPattern(int slot, int seqIndex) => _sendCC(MidiMapping.ccSeq(slot),
+      MidiMapping.seqToMidi(seqIndex), MidiMapping.channelShape);
+
+  void setPairCrossfader(int pairIndex, double value) {
+    final cc = pairIndex == 0
+        ? MidiMapping.ccPairCrossfader1
+        : pairIndex == 1
+            ? MidiMapping.ccPairCrossfader2
+            : pairIndex == 2
+                ? MidiMapping.ccPairCrossfader3
+                : MidiMapping.ccPairCrossfader4;
+    _sendCC(cc, MidiMapping.volumeToMidi(value), MidiMapping.channelXfader);
+  }
+
+  void setGlobalCrossfader(double value) => _sendCC(
+      MidiMapping.ccGlobalCrossfader,
+      MidiMapping.volumeToMidi(value),
+      MidiMapping.channelXfader);
+
+  void setCrossfaderCurve(int curveIndex) {
+    final value = (curveIndex.clamp(0, 2) * 63).clamp(0, 127);
+    _sendCC(MidiMapping.ccCrossfaderCurve, value, MidiMapping.channelXfader);
+  }
+
+  void setMasterHigh(double db) {
+    final value = (((db + 12.0) / 24.0) * 127).round().clamp(0, 127);
+    _sendCC(MidiMapping.ccMasterHigh, value, MidiMapping.channelXfader);
+  }
+
+  void setMasterMid(double db) {
+    final value = (((db + 12.0) / 24.0) * 127).round().clamp(0, 127);
+    _sendCC(MidiMapping.ccMasterMid, value, MidiMapping.channelXfader);
+  }
+
+  void setMasterLow(double db) {
+    final value = (((db + 12.0) / 24.0) * 127).round().clamp(0, 127);
+    _sendCC(MidiMapping.ccMasterLow, value, MidiMapping.channelXfader);
   }
 
   @override

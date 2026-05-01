@@ -18,6 +18,12 @@ class AppController extends ChangeNotifier {
   String? get currentPresetId => _currentPresetId;
   String? _currentPresetName;
   String? get currentPresetName => _currentPresetName;
+  List<double> _pairCrossfaders = List.filled(4, 0.5);
+  double _globalCrossfader = 0.5;
+  int _crossfaderCurveMode = 1;
+  List<double> get pairCrossfaders => _pairCrossfaders;
+  double get globalCrossfader => _globalCrossfader;
+  int get crossfaderCurveMode => _crossfaderCurveMode;
 
   AppController({required this.midi}) {
     midi.onFeedbackMessage = _handleFeedback;
@@ -229,6 +235,28 @@ class AppController extends ChangeNotifier {
   void clearCurrentPreset() {
     _currentPresetId = null;
     _currentPresetName = null;
+  }
+
+  void setPairCrossfader(int pairIndex, double value) {
+    if (pairIndex < 0 || pairIndex > 3) return;
+    midi.setPairCrossfader(pairIndex, value);
+    final list = List<double>.from(_pairCrossfaders);
+    list[pairIndex] = value;
+    _pairCrossfaders = list;
+    notifyListeners();
+  }
+
+  void setGlobalCrossfader(double value) {
+    midi.setGlobalCrossfader(value);
+    _globalCrossfader = value;
+    notifyListeners();
+  }
+
+  void setCrossfaderCurveMode(int mode) {
+    final clamped = mode.clamp(0, 2);
+    midi.setCrossfaderCurve(clamped);
+    _crossfaderCurveMode = clamped;
+    notifyListeners();
   }
 
   @override
