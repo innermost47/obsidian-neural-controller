@@ -502,6 +502,7 @@ class _TracksViewState extends State<_TracksView> {
         Expanded(
           child: ListView.builder(
             controller: _scrollController,
+            physics: const NeverScrollableScrollPhysics(),
             scrollDirection: Axis.horizontal,
             itemCount: 9,
             itemBuilder: (context, index) {
@@ -545,9 +546,12 @@ class _TracksViewState extends State<_TracksView> {
                   child: Center(
                     child: Text(
                       labels[index],
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
+                        color: _selectedIndex == index
+                            ? ObsidianTheme.textOnPrimary
+                            : ObsidianTheme.textMuted,
                       ),
                     ),
                   ),
