@@ -70,9 +70,46 @@ class AppController extends ChangeNotifier {
         _updateSlot(
             i, (s) => s.copyWith(isSolo: value == MidiMapping.feedbackActive));
       }
-      if (cc == MidiMapping.ccFeedbackPage(i)) {
+      if (cc == MidiMapping.ccFeedbackGenerate(i)) {
+        _updateSlot(i,
+            (s) => s.copyWith(isGenerating: value != MidiMapping.feedbackIdle));
+        return;
+      }
+      if (cc == MidiMapping.ccFeedbackPitch(i)) {
         _updateSlot(
-            i, (s) => s.copyWith(currentPage: value, pendingPage: false));
+            i, (s) => s.copyWith(pitch: (value / 127.0) * 192.0 - 96.0));
+      }
+      if (cc == MidiMapping.ccFeedbackFine(i)) {
+        _updateSlot(
+            i, (s) => s.copyWith(fine: (value / 127.0) * 200.0 - 100.0));
+      }
+      if (cc == MidiMapping.ccFeedbackSeq(i)) {
+        _updateSlot(i, (s) => s.copyWith(currentSeq: value));
+      }
+      if (cc == MidiMapping.ccFeedbackBeatRepeat(i)) {
+        _updateSlot(i,
+            (s) => s.copyWith(beatRepeat: value == MidiMapping.feedbackActive));
+      }
+      if (cc == MidiMapping.ccFeedbackPage(i)) {
+        if (value == MidiMapping.feedbackPending) {
+          _updateSlot(i, (s) => s.copyWith(pendingPage: true));
+        } else if (value >= 80 && value <= 83) {
+          _updateSlot(
+              i,
+              (s) => s.copyWith(
+                    pendingPage: true,
+                    pendingPageTarget: value - 80,
+                  ));
+        } else {
+          _updateSlot(
+              i,
+              (s) => s.copyWith(
+                    currentPage: value,
+                    pendingPage: false,
+                    pendingPageTarget: -1,
+                  ));
+        }
+        return;
       }
     }
   }
@@ -91,24 +128,6 @@ class AppController extends ChangeNotifier {
     if (cc == MidiMapping.ccFeedbackCrossfaderCurve) {
       _updateCrossfaderCurveState(value);
       return;
-    }
-
-    for (int i = 1; i <= 8; i++) {
-      if (cc == MidiMapping.ccFeedbackPitch(i)) {
-        _updateSlot(
-            i, (s) => s.copyWith(pitch: (value / 127.0) * 192.0 - 96.0));
-      }
-      if (cc == MidiMapping.ccFeedbackFine(i)) {
-        _updateSlot(
-            i, (s) => s.copyWith(fine: (value / 127.0) * 200.0 - 100.0));
-      }
-      if (cc == MidiMapping.ccFeedbackSeq(i)) {
-        _updateSlot(i, (s) => s.copyWith(currentSeq: value));
-      }
-      if (cc == MidiMapping.ccFeedbackBeatRepeat(i)) {
-        _updateSlot(i,
-            (s) => s.copyWith(beatRepeat: value == MidiMapping.feedbackActive));
-      }
     }
   }
 

@@ -98,69 +98,65 @@ Or run: `start ms-settings:developers`
 
 ---
 
-## MIDI Mapping
+## MIDI Communication Protocol
 
-### App → VST (Ch.1, hardcoded)
+### 1. App → VST (Control)
 
-| Control               | MIDI Message                                    |
-| --------------------- | ----------------------------------------------- |
-| Play Slot 1–8         | Note On notes 36–43 (C2–G2)                     |
-| Stop Slot 1–8         | CC 70–77 `(pulse 127→0)`                        |
-| Volume Slot 1–8       | CC 20–27                                        |
-| Pan Slot 1–8          | CC 30–37                                        |
-| Mute Slot 1–8         | CC 40–47 `(127=on, 0=off)`                      |
-| Solo Slot 1–8         | CC 50–57 `(127=on, 0=off)`                      |
-| Generate Slot 1–8     | CC 60–67 `(pulse 127→0)`                        |
-| Next / Prev Track     | CC 80–81                                        |
-| Page A/B/C/D Slot 1–8 | CC 90–97 `(10=A, 45=B, 75=C, 110=D)`            |
-| Pitch Slot 1–8        | CC 100–107 `(0=−12st, 64=center, 127=+12st)`    |
-| Fine Tune Slot 1–8    | CC 110–117 `(0=−50¢, 64=center, 127=+50¢)`      |
-| Beat Repeat Slot 1–8  | CC 120–127 `(127=on, 0=off)`                    |
-| Seq Pattern Slot 1–8  | CC 16–23 `(0/18/36/54/72/90/108/126 → seq 1–8)` |
-| Master Volume         | CC 7                                            |
-| Master Pan            | CC 10                                           |
+The App sends control signals to the VST. These must be mapped in the **OBSIDIAN Neural** MIDI Learn system.
 
-These CCs must be mapped in OBSIDIAN Neural's MIDI Learn system. Right-click any parameter in the plugin → **MIDI Learn** → move the corresponding control in this app.
-
-### VST → App feedback (Ch.2, automatic)
-
-The VST sends real-time state updates back to the app on MIDI channel 2. No configuration needed — the app listens automatically.
-
-| CC       | State                   | Values                           |
-| -------- | ----------------------- | -------------------------------- |
-| CC 21–28 | Play state Slot 1–8     | `0=idle, 64=pending, 127=active` |
-| CC 31–38 | Generate state Slot 1–8 | `0=idle, 64=pending, 127=active` |
-| CC 41–48 | Page change Slot 1–8    | `0=idle, 64=pending, 127=active` |
-
-**UI states driven by feedback:**
-
-| State        | Visual                                                                               |
-| ------------ | ------------------------------------------------------------------------------------ |
-| `idle`       | Button white, play icon                                                              |
-| `pending`    | Button pulsing, icon matches intent (play icon when arming, stop icon when stopping) |
-| `active`     | Button solid, stop icon                                                              |
-| `generating` | GEN button pulsing, page pills grayed out and locked                                 |
+| Category        | Channel   | MIDI CC / Msg          | Notes                                      |
+| :-------------- | :-------- | :--------------------- | :----------------------------------------- |
+| **Performance** | **Ch. 1** | Note 35–42 / CC 19–118 | Play, Vol, Pan, Mute, Solo, Gen, Page, Seq |
+| **Shaping**     | **Ch. 2** | CC 39–79               | ADSR Envelopes, Beat Repeat                |
+| **Crossfaders** | **Ch. 3** | CC 20–28               | Pair 1-4, Global, Curve, Master EQ         |
 
 ---
 
-**Dependencies:**
+### 2. VST → App (Feedback)
 
-- [`flutter_midi_command ^0.5.1`](https://pub.dev/packages/flutter_midi_command) — USB MIDI for Android & iOS
-- [`provider ^6.1.1`](https://pub.dev/packages/provider) — state management
+The VST sends real-time state updates. The App listens automatically on these channels.
+
+#### Mixer Feedback (Ch. 4)
+
+| Category          | MIDI CC       | Values / Notes                           |
+| :---------------- | :------------ | :--------------------------------------- |
+| **Play/Stop**     | 21–28         | `0=Idle, 64=Pending, 127=Active`         |
+| **Generate**      | 31–38         | `0=Idle, 127=Active`                     |
+| **Page Change**   | 41–48         | `0=Idle, 64=Pending, 80-83=Target (A-D)` |
+| **Volume/Pan**    | 51–58 / 61–68 | `0–127`                                  |
+| **Pitch/Fine**    | 71–78 / 81–88 | `0–127`                                  |
+| **Seq/Mute/Solo** | 91–118        | State values                             |
+
+#### Shaping Feedback (Ch. 5)
+
+| Category              | MIDI CC            | Notes                                      |
+| :-------------------- | :----------------- | :----------------------------------------- |
+| **ADSR Envelopes**    | 21–58              | Per slot (Attack, Decay, Sustain, Release) |
+| **Pair Crossfaders**  | **59, 60, 61, 62** | Pair 1, 2, 3, 4                            |
+| **Global Crossfader** | **64**             | Value 0–127                                |
+| **Crossfader Curve**  | **65**             | Mode 0, 1, 2                               |
+| **Master EQ**         | 66, 67, 68         | High, Mid, Low                             |
 
 ---
 
-## Bitwig Studio setup (recommended)
+### UI Synchronization Logic
 
-The VST sends MIDI feedback on Ch.2 via its `processBlock` output buffer. To route this to your Android device in Bitwig:
+- **`pending`**: Triggered when feedback value is `64`.
+- **`pending page`**: Triggered by **Channel 4, CC 41–48** with values **80–83**. The value corresponds to the target page (80=A, 81=B, 82=C, 83=D).
+- **`active`**: Triggered when feedback value is `127`.
+- **`generating`**: GEN button pulses; Page buttons locked.
 
-1. Keep your OBSIDIAN-Neural instrument track output on **Master** (audio intact)
-2. Create a new **MIDI track**
-3. Add a **Note Receiver** device — set source to your OBSIDIAN-Neural track
-4. Set the MIDI track **output** to your USB Android port
-5. Set monitoring to **On** (always active, not just armed)
+---
 
-The app will receive feedback automatically once connected.
+### Bitwig Studio Setup
+
+1.  **Instrument Track:** Keep your OBSIDIAN-Neural VST output on **Master**.
+2.  **MIDI Routing:** Create a new **MIDI Track** and add a **Note Receiver** device.
+    - Set **Source** to your VST track.
+    - Set **Output** to your Android device.
+3.  **Channel Handling:** Ensure your routing configuration allows **Channels 1, 2, 3, 4, and 5** to pass through. If using a MIDI bridge, verify it is **not filtering** these channels.
+
+> **Note:** Your implementation uses 0-based MIDI channels for the VST (`channelPerf=0`, etc.) and specific feedback channels `4` and `5`. Ensure your Android `MidiService` is configured to listen specifically to these channels.
 
 ---
 
