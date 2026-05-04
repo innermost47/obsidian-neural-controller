@@ -160,7 +160,7 @@ class _Header extends StatelessWidget {
               maxLength: 20,
               style: ObsidianTheme.slotTitle,
               decoration: InputDecoration(
-                hintText: 'Slot ${slot.index}',
+                hintText: 'Track ${slot.index}',
                 hintStyle: ObsidianTheme.labelSmall
                     .copyWith(color: ObsidianTheme.textMuted),
                 counterStyle: ObsidianTheme.labelTiny

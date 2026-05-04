@@ -37,7 +37,7 @@ class SlotState {
     this.pendingStop = false,
   });
 
-  String get displayName => name.isEmpty ? 'Slot $index' : name;
+  String get displayName => name.isEmpty ? 'Track $index' : name;
 
   SlotState copyWith({
     String? name,
