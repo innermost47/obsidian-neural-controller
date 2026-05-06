@@ -39,7 +39,7 @@ class MidiMapping {
   static int pitchToMidi(double pitch) =>
       ((pitch + 96.0) / 192.0 * 127).round().clamp(0, 127);
   static int fineToMidi(double fine) =>
-      ((fine + 50.0) / 100.0 * 127).round().clamp(0, 127);
+      ((fine + 100.0) / 200.0 * 127).round().clamp(0, 127);
   static int volumeToMidi(double v) => (v * 127).round().clamp(0, 127);
   static int panToMidi(double pan) =>
       ((pan + 1.0) / 2.0 * 127).round().clamp(0, 127);
